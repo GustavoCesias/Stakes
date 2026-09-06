@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TipService, Tip } from '../../services/tip.service';
-import { ChannelService, Channel } from '../../services/channel.service';
+import { ChannelService, Channel, ChannelSubgroup } from '../../services/channel.service';
 import { TicketService, Ticket, BetBuilder } from '../../services/ticket.service';
 
 export interface BaseMaestraItem {
@@ -41,6 +41,10 @@ export class TipPoolComponent implements OnInit {
   searchText = '';
   filterResult: string = 'ALL';
   selectedChannelFilter: number | 'ALL' | 'PERSONAL' = 'ALL';
+  selectedSubgroupFilter: number | 'ALL' = 'ALL';
+  
+  filterSubgroups: ChannelSubgroup[] = [];
+  formSubgroups: ChannelSubgroup[] = [];
 
   editingTip: Partial<Tip> = this.getDefaultTip();
 
@@ -242,6 +246,9 @@ export class TipPoolComponent implements OnInit {
     } else if (this.selectedChannelFilter !== 'ALL') {
       result = result.filter(i => i.channel?.id === Number(this.selectedChannelFilter));
     }
+    if (this.selectedSubgroupFilter !== 'ALL') {
+      result = result.filter(i => i.tip?.subgroup?.id === Number(this.selectedSubgroupFilter));
+    }
     if (this.filterResult !== 'ALL') {
       result = result.filter(i => i.result === this.filterResult);
     }
@@ -341,6 +348,7 @@ export class TipPoolComponent implements OnInit {
   openNewForm() {
     this.isEditing = false;
     this.editingTip = this.getDefaultTip();
+    this.formSubgroups = [];
     this.showForm = true;
   }
 
@@ -348,7 +356,30 @@ export class TipPoolComponent implements OnInit {
     if (item.type === 'TIP' && item.tip) {
       this.isEditing = true;
       this.editingTip = { ...item.tip };
+      this.onChannelSelected(); // Load subgroups for the current channel
       this.showForm = true;
+    }
+  }
+
+  onChannelSelected() {
+    this.formSubgroups = [];
+    this.editingTip.subgroup = null;
+    if (this.editingTip.channel?.id) {
+      this.channelService.getSubgroups(this.editingTip.channel.id).subscribe({
+        next: (sg) => this.formSubgroups = sg,
+        error: (err) => console.error('Error loading form subgroups', err)
+      });
+    }
+  }
+
+  onFilterChannelSelected() {
+    this.selectedSubgroupFilter = 'ALL';
+    this.filterSubgroups = [];
+    if (this.selectedChannelFilter !== 'ALL' && this.selectedChannelFilter !== 'PERSONAL') {
+      this.channelService.getSubgroups(Number(this.selectedChannelFilter)).subscribe({
+        next: (sg) => this.filterSubgroups = sg,
+        error: (err) => console.error('Error loading filter subgroups', err)
+      });
     }
   }
 
@@ -362,6 +393,10 @@ export class TipPoolComponent implements OnInit {
 
   compareChannels(c1: Channel, c2: Channel): boolean {
     return c1 && c2 ? c1.id === c2.id : c1 === c2;
+  }
+
+  compareSubgroups(s1: ChannelSubgroup, s2: ChannelSubgroup): boolean {
+    return s1 && s2 ? s1.id === s2.id : s1 === s2;
   }
 
   saveChannel() {
@@ -380,18 +415,39 @@ export class TipPoolComponent implements OnInit {
 
   saveTip() {
     if (this.editingTip.event && this.editingTip.market) {
-      this.tipService.createTip(this.editingTip as Tip).subscribe({
-        next: (saved) => {
-          if (this.isEditing) {
+      if (this.isEditing && this.editingTip.id) {
+        this.tipService.updateTip(this.editingTip.id, this.editingTip as Tip).subscribe({
+          next: (saved) => {
             const idx = this.tips.findIndex(t => t.id === saved.id);
             if (idx !== -1) this.tips[idx] = saved;
-          } else {
+            this.loadTips();
+            this.showForm = false;
+          },
+          error: (err) => alert('Error actualizando recomendación. Error: ' + err.message)
+        });
+      } else {
+        this.tipService.createTip(this.editingTip as Tip).subscribe({
+          next: (saved) => {
             this.tips.push(saved);
-          }
+            this.loadTips();
+            this.showForm = false;
+          },
+          error: (err) => alert('Error guardando recomendación. Error: ' + err.message)
+        });
+      }
+    }
+  }
+
+  updateTipResult(item: BaseMaestraItem, result: string) {
+    if (item.type === 'TIP' && item.tip?.id) {
+      const updatedTip = { ...item.tip, result: result };
+      this.tipService.updateTip(item.tip.id, updatedTip as Tip).subscribe({
+        next: (saved) => {
+          const idx = this.tips.findIndex(t => t.id === saved.id);
+          if (idx !== -1) this.tips[idx] = saved;
           this.loadTips();
-          this.showForm = false;
         },
-        error: (err) => alert('Error guardando recomendación. Error: ' + err.message)
+        error: (err) => alert('Error actualizando resultado. Error: ' + err.message)
       });
     }
   }

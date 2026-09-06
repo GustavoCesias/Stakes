@@ -48,6 +48,12 @@ export class TipService {
     );
   }
 
+  updateTip(id: number, tip: Tip): Observable<Tip> {
+    return this.http.put<Tip>(`${this.apiUrl}/${id}`, tip).pipe(
+      tap(() => this.invalidateCache())
+    );
+  }
+
   deleteTip(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       tap(() => this.invalidateCache())

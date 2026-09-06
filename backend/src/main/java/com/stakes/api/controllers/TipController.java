@@ -36,4 +36,9 @@ public class TipController {
         tipService.deleteTip(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Tip> updateTip(@PathVariable Long id, @RequestBody Tip tip) {
+        return ResponseEntity.ok(tipService.updateTip(id, tip));
+    }
 }

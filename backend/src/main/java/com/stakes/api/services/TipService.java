@@ -52,4 +52,28 @@ public class TipService {
         // Eliminar el tip
         tipRepository.deleteById(id);
     }
+
+    @Transactional
+    public Tip updateTip(Long id, Tip tipDetails) {
+        Tip tip = tipRepository.findById(id).orElseThrow(() -> new RuntimeException("Tip no encontrado"));
+        tip.setDate(tipDetails.getDate());
+        tip.setEvent(tipDetails.getEvent());
+        tip.setSport(tipDetails.getSport());
+        tip.setLeague(tipDetails.getLeague());
+        tip.setMarket(tipDetails.getMarket());
+        tip.setPick(tipDetails.getPick());
+        tip.setOdds(tipDetails.getOdds());
+        tip.setChannel(tipDetails.getChannel());
+        tip.setSubgroup(tipDetails.getSubgroup());
+        
+        boolean resultChanged = !tip.getResult().equals(tipDetails.getResult());
+        tip.setResult(tipDetails.getResult());
+
+        Tip updated = tipRepository.save(tip);
+        
+        if (resultChanged && updated.getResult() != null) {
+            ticketService.syncTipResultAndRecalculateAffectedTickets(updated);
+        }
+        return updated;
+    }
 }

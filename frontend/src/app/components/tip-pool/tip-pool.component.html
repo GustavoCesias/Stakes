@@ -56,7 +56,7 @@
         <div class="md:col-span-3">
           <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Canal / Origen</label>
           <div class="flex space-x-2">
-            <select [(ngModel)]="editingTip.channel" [compareWith]="compareChannels" name="channel"
+            <select [(ngModel)]="editingTip.channel" (ngModelChange)="onChannelSelected()" [compareWith]="compareChannels" name="channel"
               class="flex-1 bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
               <option [ngValue]="null">📡 Personal / Sin Canal</option>
               @for (ch of channels; track ch.id) {
@@ -70,15 +70,42 @@
           </div>
         </div>
 
+        <!-- Subgrupo (solo si hay canal seleccionado) -->
+        @if (editingTip.channel) {
         <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Subcanal / Etiqueta</label>
+          <select [(ngModel)]="editingTip.subgroup" [compareWith]="compareSubgroups" name="subgroup"
+            class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all appearance-none cursor-pointer">
+            <option [ngValue]="null">-- General --</option>
+            @for (sg of formSubgroups; track sg.id) {
+              <option [ngValue]="sg">{{ sg.name }}</option>
+            }
+          </select>
+        </div>
+        }
+
+        <!-- Date -->
+        <div [class]="editingTip.channel ? 'md:col-span-2' : 'md:col-span-3'">
           <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Fecha</label>
           <input type="date" [(ngModel)]="editingTip.date" name="date" required
             class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
         </div>
 
-        <div class="md:col-span-2">
+        <div class="md:col-span-3">
           <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Evento (Partido)</label>
           <input type="text" [(ngModel)]="editingTip.event" name="event" required placeholder="Ej. Real Madrid vs Barcelona"
+            class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+        </div>
+
+        <!-- Deporte y Liga -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Deporte (Opcional)</label>
+          <input type="text" [(ngModel)]="editingTip.sport" name="sport" placeholder="Ej. Fútbol"
+            class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Liga / Competición (Opcional)</label>
+          <input type="text" [(ngModel)]="editingTip.league" name="league" placeholder="Ej. La Liga"
             class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
         </div>
 
@@ -214,11 +241,10 @@
           class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white text-sm pl-9 pr-4 py-2 outline-none transition-all placeholder-gray-600">
       </div>
 
-      <!-- Filtro por Canal -->
       <div class="flex items-center space-x-2 flex-shrink-0">
         <span class="text-xs text-gray-600 font-medium">Canal:</span>
-        <select [(ngModel)]="selectedChannelFilter"
-          class="bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white text-xs px-3 py-1.5 outline-none transition-all">
+        <select [(ngModel)]="selectedChannelFilter" (ngModelChange)="onFilterChannelSelected()"
+          class="bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white text-xs px-3 py-1.5 outline-none transition-all appearance-none cursor-pointer">
           <option value="ALL">Todos los canales</option>
           <option value="PERSONAL">📡 Personal / Sin Canal</option>
           @for (ch of channels; track ch.id) {
@@ -226,6 +252,20 @@
           }
         </select>
       </div>
+
+      <!-- Filtro por Subgrupo -->
+      @if (selectedChannelFilter !== 'ALL' && selectedChannelFilter !== 'PERSONAL') {
+      <div class="flex items-center space-x-2 flex-shrink-0 animate-fade-in">
+        <span class="text-xs text-gray-600 font-medium">Subcanal:</span>
+        <select [(ngModel)]="selectedSubgroupFilter"
+          class="bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white text-xs px-3 py-1.5 outline-none transition-all appearance-none cursor-pointer">
+          <option value="ALL">Todos los subcanales</option>
+          @for (sg of filterSubgroups; track sg.id) {
+            <option [value]="sg.id">{{ sg.name }}</option>
+          }
+        </select>
+      </div>
+      }
 
       <!-- Filter chips -->
       <div class="flex items-center space-x-2 flex-shrink-0">
@@ -297,9 +337,16 @@
               </td>
               <td class="px-5 py-4 whitespace-nowrap">
                 @if (item.channel) {
-                  <span class="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/15 text-indigo-300 rounded-lg text-xs font-semibold">
-                    {{ item.channel.name }}
-                  </span>
+                  <div class="flex flex-col items-start">
+                    <span class="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/15 text-indigo-300 rounded-lg text-xs font-semibold">
+                      {{ item.channel.name }}
+                    </span>
+                    @if (item.tip?.subgroup) {
+                      <span class="px-2 py-0.5 mt-1 bg-purple-500/10 text-purple-300 rounded text-[10px] font-bold border border-purple-500/20 uppercase tracking-wider">
+                        {{ item.tip?.subgroup?.name }}
+                      </span>
+                    }
+                  </div>
                 } @else {
                   <span class="px-2.5 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-lg text-xs font-semibold">
                     📡 Personal
@@ -318,6 +365,12 @@
               <td class="px-5 py-4 whitespace-nowrap text-right">
                 <div class="flex justify-end items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   @if (item.type === 'TIP' && item.tip) {
+                    <!-- Botones de estado rapido -->
+                    <button (click)="updateTipResult(item, 'GANADA')" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 flex items-center justify-center transition-all text-xs" title="Marcar Ganada">✅</button>
+                    <button (click)="updateTipResult(item, 'PERDIDA')" class="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 flex items-center justify-center transition-all text-xs" title="Marcar Perdida">❌</button>
+                    <button (click)="updateTipResult(item, 'NULA')" class="w-7 h-7 rounded-lg bg-gray-500/10 text-gray-400 hover:bg-gray-500 hover:text-white border border-gray-500/20 flex items-center justify-center transition-all text-xs" title="Marcar Nula">➖</button>
+                    <div class="w-px h-4 bg-white/10 mx-1"></div>
+                    <!-- Botones de edicion/eliminacion -->
                     <button (click)="editTip(item)"
                       class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 flex items-center justify-center transition-all text-xs" title="Editar">✏️</button>
                     <button (click)="deleteItem(item)"
