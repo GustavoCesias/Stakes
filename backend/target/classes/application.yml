@@ -14,8 +14,15 @@ spring:
       hibernate:
         format_sql: true
 
+logging:
+  level:
+    com.zaxxer.hikari: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.hibernate.SQL: DEBUG
+
 server:
   port: ${PORT:8080}
+
 
 
 
