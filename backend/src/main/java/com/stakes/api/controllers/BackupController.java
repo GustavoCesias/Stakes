@@ -79,39 +79,96 @@ public class BackupController {
         }
 
         try {
+            // 1. Bankrolls
             if (backup.getBankrolls() != null) {
                 for (Bankroll b : backup.getBankrolls()) {
                     b.setId(null);
                     bankrollRepository.save(b);
                 }
             }
+
+            // 2. Bankroll Transactions
             if (backup.getBankrollTransactions() != null) {
                 for (BankrollTransaction tx : backup.getBankrollTransactions()) {
                     tx.setId(null);
                     bankrollTransactionRepository.save(tx);
                 }
             }
+
+            // 3. Channels mapping
+            Map<Long, Channel> channelMap = new java.util.HashMap<>();
             if (backup.getChannels() != null) {
                 for (Channel ch : backup.getChannels()) {
+                    Long oldId = ch.getId();
                     ch.setId(null);
-                    channelRepository.save(ch);
+                    Channel saved = channelRepository.save(ch);
+                    if (oldId != null) {
+                        channelMap.put(oldId, saved);
+                    }
                 }
             }
+
+            // 4. Tips mapping
+            Map<Long, Tip> tipMap = new java.util.HashMap<>();
             if (backup.getTips() != null) {
                 for (Tip tip : backup.getTips()) {
+                    Long oldTipId = tip.getId();
                     tip.setId(null);
-                    tipRepository.save(tip);
+                    if (tip.getChannel() != null && tip.getChannel().getId() != null) {
+                        Channel matched = channelMap.get(tip.getChannel().getId());
+                        if (matched != null) {
+                            tip.setChannel(matched);
+                        } else {
+                            tip.getChannel().setId(null);
+                            Channel savedCh = channelRepository.save(tip.getChannel());
+                            tip.setChannel(savedCh);
+                        }
+                    }
+                    Tip savedTip = tipRepository.save(tip);
+                    if (oldTipId != null) {
+                        tipMap.put(oldTipId, savedTip);
+                    }
                 }
             }
+
+            // 5. Tickets mapping
             if (backup.getTickets() != null) {
                 for (Ticket ticket : backup.getTickets()) {
                     ticket.setId(null);
+                    if (ticket.getSelections() != null) {
+                        for (TicketSelection sel : ticket.getSelections()) {
+                            sel.setId(null);
+                            sel.setTicket(ticket);
+                            if (sel.getTip() != null) {
+                                Tip t = sel.getTip();
+                                Long oldTipId = t.getId();
+                                if (oldTipId != null && tipMap.containsKey(oldTipId)) {
+                                    sel.setTip(tipMap.get(oldTipId));
+                                } else {
+                                    t.setId(null);
+                                    if (t.getChannel() != null && t.getChannel().getId() != null) {
+                                        Channel matched = channelMap.get(t.getChannel().getId());
+                                        if (matched != null) {
+                                            t.setChannel(matched);
+                                        } else {
+                                            t.getChannel().setId(null);
+                                            Channel savedCh = channelRepository.save(t.getChannel());
+                                            t.setChannel(savedCh);
+                                        }
+                                    }
+                                    Tip savedTip = tipRepository.save(t);
+                                    sel.setTip(savedTip);
+                                }
+                            }
+                        }
+                    }
                     ticketRepository.save(ticket);
                 }
             }
 
             return ResponseEntity.ok(Map.of("message", "Respaldo importado correctamente con éxito"));
         } catch (Exception ex) {
+            ex.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("message", "Error al importar respaldo: " + ex.getMessage()));
         }
     }
