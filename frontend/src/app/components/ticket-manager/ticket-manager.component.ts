@@ -6,6 +6,7 @@ import { TicketService, Ticket, TicketSelection, BetBuilder } from '../../servic
 import { TipService, Tip } from '../../services/tip.service';
 import { ChannelService, ChannelSubgroup, Channel } from '../../services/channel.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TicketDetailModalComponent } from '../shared/ticket-detail-modal/ticket-detail-modal.component';
 
 export interface PickForm {
   selectionId?: number;
@@ -43,7 +44,7 @@ export interface SearchResultItem {
 @Component({
   selector: 'app-ticket-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TicketDetailModalComponent],
   templateUrl: './ticket-manager.component.html',
   styleUrl: './ticket-manager.component.css'
 })
@@ -635,12 +636,6 @@ export class TicketManagerComponent implements OnInit {
 
   closeViewTicket() {
     this.selectedTicketForView = null;
-  }
-
-  getPotentialWinnings(ticket: Ticket): string {
-    const stake = ticket.stake || 0;
-    const odds = ticket.totalOdds || 0;
-    return (stake * odds).toFixed(2);
   }
 
   addSearchedSelection(tip: Tip) {

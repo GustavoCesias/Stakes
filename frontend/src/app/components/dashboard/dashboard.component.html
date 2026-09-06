@@ -1,18 +1,18 @@
-﻿<div class="space-y-6 animate-fade-in-up">
+<div class="space-y-6 animate-fade-in-up">
 
-  <!-- â•â•â•â•â•â• PAGE HEADER & CONTROL BAR â•â•â•â•â•â• -->
+  <!-- ══════ PAGE HEADER & CONTROL BAR ══════ -->
   <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-3xl border border-white/10">
     <div>
       <h2 class="text-2xl font-bold text-white flex items-center gap-2" style="font-family:'Space Grotesk',sans-serif">
         <span>Dashboard</span>
         @if (activeMode === 'tipster') {
-          <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold">ðŸŽ¯ Tipster Stats</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold">🎯 Tipster Stats</span>
         } @else {
-          <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">ðŸ‘¤ Mis Apuestas</span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">👤 Mis Apuestas</span>
         }
       </h2>
       <p class="text-xs text-gray-400 mt-0.5">
-        {{ activeMode === 'tipster' ? 'MÃ©tricas de rendimiento original enviadas por el tipster' : 'Resumen de tu actividad personal, banca y apuestas rearmadas' }}
+        {{ activeMode === 'tipster' ? 'Métricas de rendimiento original enviadas por el tipster' : 'Resumen de tu actividad personal, banca y apuestas rearmadas' }}
       </p>
     </div>
 
@@ -22,13 +22,13 @@
         <button (click)="setMode('mine')" 
           class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
           [ngClass]="activeMode === 'mine' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md' : 'text-gray-400 hover:text-white'">
-          <span>ðŸ‘¤ Mis Apuestas</span>
+          <span>👤 Mis Apuestas</span>
         </button>
 
         <button (click)="setMode('tipster')" 
           class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
           [ngClass]="activeMode === 'tipster' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' : 'text-gray-400 hover:text-white'">
-          <span>ðŸŽ¯ Apuestas Tipster</span>
+          <span>🎯 Apuestas Tipster</span>
         </button>
       </div>
 
@@ -36,9 +36,9 @@
       <div class="relative">
         <select [ngModel]="selectedChannelId" (ngModelChange)="setChannelFilter($event ? Number($event) : null)"
           class="bg-slate-800 border border-white/10 text-gray-200 text-xs font-semibold px-3 py-2 rounded-2xl outline-none focus:border-emerald-500 transition-all cursor-pointer">
-          <option [ngValue]="null">ðŸŒ Todos los Canales</option>
+          <option [ngValue]="null">🌐 Todos los Canales</option>
           @for (c of channels; track c.id) {
-            <option [ngValue]="c.id">ðŸ“¡ {{ c.name }} ({{ c.type }})</option>
+            <option [ngValue]="c.id">📡 {{ c.name }} ({{ c.type }})</option>
           }
         </select>
       </div>
@@ -51,7 +51,7 @@
     </div>
   </div>
 
-  <!-- â•â•â•â•â•â• BANKROLL BANNER (SOLO MIS APUESTAS) â•â•â•â•â•â• -->
+  <!-- ══════ BANKROLL BANNER (SOLO MIS APUESTAS) ══════ -->
   @if (!isLoading && activeMode === 'mine') {
   <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-6 border border-white/10 shadow-2xl relative overflow-hidden">
     <div class="absolute -top-20 -right-20 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
@@ -60,11 +60,11 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-white/10 pb-4 relative z-10">
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shadow-inner">
-          ðŸ¦
+          🏦
         </div>
         <div>
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <span>GestiÃ³n de Banca (Bankroll)</span>
+            <span>Gestión de Banca (Bankroll)</span>
           </h3>
           <p class="text-xs text-gray-400">Controla tu capital inicial, fondos disponibles y movimientos de dinero.</p>
         </div>
@@ -74,13 +74,13 @@
       <div class="flex items-center space-x-2 flex-wrap gap-y-2">
         <button (click)="openInitialModal()" 
           class="flex items-center space-x-1.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold px-3 py-2 rounded-xl border border-white/10 transition-all cursor-pointer">
-          <span>âš™ï¸ Banca Inicial</span>
+          <span>⚙️ Banca Inicial</span>
         </button>
 
         <button (click)="openTransactionModal('DEPOSIT')" 
           class="flex items-center space-x-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-3 py-2 rounded-xl border border-emerald-500/20 transition-all cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span>+ DepÃ³sito</span>
+          <span>+ Depósito</span>
         </button>
 
         <button (click)="openTransactionModal('WITHDRAWAL')" 
@@ -91,7 +91,7 @@
 
         <button (click)="openHistoryModal()" 
           class="flex items-center space-x-1.5 bg-slate-700/50 hover:bg-slate-700 text-gray-300 text-xs font-semibold px-3 py-2 rounded-xl border border-white/5 transition-all cursor-pointer">
-          <span>ðŸ“‹ Movimientos ({{ movementsCount }})</span>
+          <span>📋 Movimientos ({{ movementsCount }})</span>
         </button>
       </div>
     </div>
@@ -142,17 +142,17 @@
   </div>
   }
 
-  <!-- â•â•â•â•â•â• TIPSTER PERFORMANCE BANNER (SOLO MODALIDAD TIPSTER) â•â•â•â•â•â• -->
+  <!-- ══════ TIPSTER PERFORMANCE BANNER (SOLO MODALIDAD TIPSTER) ══════ -->
   @if (!isLoading && activeMode === 'tipster') {
   <div class="bg-gradient-to-r from-purple-950/80 via-slate-900 to-indigo-950/80 rounded-3xl p-6 border border-purple-500/20 shadow-2xl relative overflow-hidden">
     <div class="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"></div>
     <div class="flex items-center space-x-4">
       <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 text-xl shadow-inner">
-        ðŸŽ¯
+        🎯
       </div>
       <div>
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <span>AnÃ¡lisis de Apuestas de Tipsters</span>
+          <span>Análisis de Apuestas de Tipsters</span>
           @if (selectedChannelId) {
             <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">Filtro activo</span>
           }
@@ -165,7 +165,7 @@
   </div>
   }
 
-  <!-- â•â•â•â•â•â• LOADING â•â•â•â•â•â• -->
+  <!-- ══════ LOADING ══════ -->
   @if (isLoading) {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       @for (i of [1,2,3,4]; track i) {
@@ -177,7 +177,7 @@
     </div>
   }
 
-  <!-- â•â•â•â•â•â• KPI CARDS â•â•â•â•â•â• -->
+  <!-- ══════ KPI CARDS ══════ -->
   @if (!isLoading) {
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
 
@@ -221,7 +221,7 @@
         </div>
       </div>
       <div class="text-3xl font-extrabold text-gradient-amber">{{ yield >= 0 ? '+' : '' }}{{ yield }}%</div>
-      <div class="mt-1 text-[11px] text-amber-500">Retorno sobre inversiÃ³n</div>
+      <div class="mt-1 text-[11px] text-amber-500">Retorno sobre inversión</div>
     </div>
 
     <!-- Pendientes -->
@@ -239,14 +239,14 @@
 
   </div>
 
-  <!-- â•â•â•â•â•â• RECIENTES + DISTRIBUCIÃ“N â•â•â•â•â•â• -->
+  <!-- ══════ RECIENTES + DISTRIBUCIÓN ══════ -->
   <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mt-2">
 
-    <!-- Ãšltimos tickets -->
+    <!-- Últimos tickets -->
     <div class="lg:col-span-3 glass rounded-2xl border border-white/5 overflow-hidden">
       <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-white">Ãšltimas apuestas</h3>
-        <a routerLink="/tickets/mine" class="text-xs text-gray-500 hover:text-emerald-400 transition-colors">Ver todas â†’</a>
+        <h3 class="text-sm font-semibold text-white">Últimas apuestas</h3>
+        <a routerLink="/tickets/mine" class="text-xs text-gray-500 hover:text-emerald-400 transition-colors">Ver todas →</a>
       </div>
 
       @if (recentTickets.length === 0) {
@@ -254,8 +254,8 @@
           <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
             <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
           </div>
-          <p class="text-sm text-gray-500">No hay tickets registrados aÃºn.</p>
-          <a routerLink="/tickets/mine" class="mt-3 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">Crear primer ticket â†’</a>
+          <p class="text-sm text-gray-500">No hay tickets registrados aún.</p>
+          <a routerLink="/tickets/mine" class="mt-3 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">Crear primer ticket →</a>
         </div>
       }
 
@@ -304,9 +304,9 @@
       </div>
     </div>
 
-    <!-- DistribuciÃ³n de resultados -->
+    <!-- Distribución de resultados -->
     <div class="lg:col-span-2 glass rounded-2xl border border-white/5 p-5">
-      <h3 class="text-sm font-semibold text-white mb-4">DistribuciÃ³n</h3>
+      <h3 class="text-sm font-semibold text-white mb-4">Distribución</h3>
 
       @if (tickets.length === 0) {
         <div class="flex flex-col items-center justify-center h-40 text-center">
@@ -375,15 +375,15 @@
 
 </div>
 
-<!-- â•â•â•â•â•â• MODAL BANCA INICIAL â•â•â•â•â•â• -->
+<!-- ══════ MODAL BANCA INICIAL ══════ -->
 @if (showInitialModal) {
 <div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" (click)="closeInitialModal()">
   <div class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[400px] p-6 animate-scale-in" (click)="$event.stopPropagation()">
     <div class="flex justify-between items-center mb-5 pb-3 border-b border-white/10">
       <h3 class="text-lg font-bold text-white flex items-center gap-2">
-        <span>âš™ï¸ Configurar Banca Inicial</span>
+        <span>⚙️ Configurar Banca Inicial</span>
       </h3>
-      <button (click)="closeInitialModal()" class="text-gray-400 hover:text-white text-sm font-bold">âœ•</button>
+      <button (click)="closeInitialModal()" class="text-gray-400 hover:text-white text-sm font-bold">✕</button>
     </div>
     
     <div class="space-y-4">
@@ -412,15 +412,15 @@
 </div>
 }
 
-<!-- â•â•â•â•â•â• MODAL NUEVO MOVIMIENTO (DEPÃ“SITO / RETIRO) â•â•â•â•â•â• -->
+<!-- ══════ MODAL NUEVO MOVIMIENTO (DEPÓSITO / RETIRO) ══════ -->
 @if (showTransactionModal) {
 <div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" (click)="closeTransactionModal()">
   <div class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[420px] p-6 animate-scale-in" (click)="$event.stopPropagation()">
     <div class="flex justify-between items-center mb-5 pb-3 border-b border-white/10">
       <h3 class="text-lg font-bold text-white flex items-center gap-2">
-        <span>{{ transactionForm.type === 'DEPOSIT' ? 'âž• Registrar DepÃ³sito' : 'âž– Registrar Retiro' }}</span>
+        <span>{{ transactionForm.type === 'DEPOSIT' ? '➕ Registrar Depósito' : '➖ Registrar Retiro' }}</span>
       </h3>
-      <button (click)="closeTransactionModal()" class="text-gray-400 hover:text-white text-sm font-bold">âœ•</button>
+      <button (click)="closeTransactionModal()" class="text-gray-400 hover:text-white text-sm font-bold">✕</button>
     </div>
     
     <div class="space-y-4">
@@ -437,8 +437,8 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">DescripciÃ³n (Opcional)</label>
-        <input type="text" [(ngModel)]="transactionForm.description" placeholder="Ej. InyecciÃ³n de capital mensual / Retiro de ganancias"
+        <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Descripción (Opcional)</label>
+        <input type="text" [(ngModel)]="transactionForm.description" placeholder="Ej. Inyección de capital mensual / Retiro de ganancias"
           class="w-full bg-slate-800 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
       </div>
     </div>
@@ -448,27 +448,27 @@
       <button (click)="saveTransaction()" 
         class="px-5 py-2 rounded-xl text-white text-xs font-bold shadow-lg transition-all"
         [ngClass]="transactionForm.type === 'DEPOSIT' ? 'bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/20' : 'bg-red-500 hover:bg-red-400 shadow-red-500/20'">
-        Guardar {{ transactionForm.type === 'DEPOSIT' ? 'DepÃ³sito' : 'Retiro' }}
+        Guardar {{ transactionForm.type === 'DEPOSIT' ? 'Depósito' : 'Retiro' }}
       </button>
     </div>
   </div>
 </div>
 }
 
-<!-- â•â•â•â•â•â• MODAL HISTORIAL DE MOVIMIENTOS â•â•â•â•â•â• -->
+<!-- ══════ MODAL HISTORIAL DE MOVIMIENTOS ══════ -->
 @if (showHistoryModal) {
 <div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" (click)="closeHistoryModal()">
   <div class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[520px] max-w-full p-6 animate-scale-in" (click)="$event.stopPropagation()">
     <div class="flex justify-between items-center mb-5 pb-3 border-b border-white/10">
       <h3 class="text-lg font-bold text-white flex items-center gap-2">
-        <span>ðŸ“‹ Historial de Movimientos de Banca</span>
+        <span>📋 Historial de Movimientos de Banca</span>
       </h3>
-      <button (click)="closeHistoryModal()" class="text-gray-400 hover:text-white text-sm font-bold">âœ•</button>
+      <button (click)="closeHistoryModal()" class="text-gray-400 hover:text-white text-sm font-bold">✕</button>
     </div>
 
     @if (allMovements.length === 0) {
       <div class="text-center py-10 text-gray-500 text-sm">
-        No se han registrado movimientos de banca aÃºn.
+        No se han registrado movimientos de banca aún.
       </div>
     } @else {
       <div class="max-h-72 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -477,7 +477,7 @@
             <div class="bg-slate-800/90 p-3 rounded-xl border border-emerald-500/30 flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  ðŸ¦
+                  🏦
                 </span>
                 <div>
                   <div class="text-xs font-bold text-white flex items-center gap-2">
@@ -492,7 +492,7 @@
                 <span class="text-sm font-extrabold text-emerald-400">
                   +${{ Number(m.amount).toFixed(2) }}
                 </span>
-                <button (click)="closeHistoryModal(); openInitialModal()" class="text-xs text-gray-400 hover:text-emerald-400 px-2 py-1 transition-colors">âš™ï¸ Editar</button>
+                <button (click)="closeHistoryModal(); openInitialModal()" class="text-xs text-gray-400 hover:text-emerald-400 px-2 py-1 transition-colors">⚙️ Editar</button>
               </div>
             </div>
           } @else {
@@ -504,10 +504,10 @@
                 </span>
                 <div>
                   <div class="text-xs font-bold text-white flex items-center gap-2">
-                    <span>{{ m.type === 'DEPOSIT' ? 'DepÃ³sito' : 'Retiro' }}</span>
+                    <span>{{ m.type === 'DEPOSIT' ? 'Depósito' : 'Retiro' }}</span>
                     <span class="text-[10px] text-gray-500 font-normal">{{ m.date }}</span>
                   </div>
-                  <div class="text-[11px] text-gray-400">{{ m.description || 'Sin descripciÃ³n' }}</div>
+                  <div class="text-[11px] text-gray-400">{{ m.description || 'Sin descripción' }}</div>
                 </div>
               </div>
 
@@ -515,7 +515,7 @@
                 <span class="text-sm font-extrabold" [ngClass]="m.type === 'DEPOSIT' ? 'text-emerald-400' : 'text-red-400'">
                   {{ m.type === 'DEPOSIT' ? '+' : '-' }}${{ Number(m.amount).toFixed(2) }}
                 </span>
-                <button (click)="deleteTransaction(m.id)" class="text-gray-500 hover:text-red-400 text-xs px-2 py-1 transition-colors" title="Eliminar">âœ•</button>
+                <button (click)="deleteTransaction(m.id)" class="text-gray-500 hover:text-red-400 text-xs px-2 py-1 transition-colors" title="Eliminar">✕</button>
               </div>
             </div>
           }
@@ -530,139 +530,9 @@
 </div>
 }
 
-<!-- â•â•â•â•â•â• MODAL DETALLE TICKET (mismo diseÃ±o que Ticket Manager) â•â•â•â•â•â• -->
-@if (selectedTicket) {
-<div class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden" (click)="closeViewTicket()">
-  <div class="bg-white rounded-[24px] shadow-2xl w-[420px] max-w-full max-h-[90vh] flex flex-col overflow-hidden relative" (click)="$event.stopPropagation()">
-
-    <!-- Ãrea de contenido desplazable -->
-    <div class="flex-1 overflow-y-auto">
-
-      <!-- Encabezado: Tipo, Stake y Cuota Total -->
-      <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
-        <div class="flex items-center space-x-2">
-          <span class="font-bold text-gray-900 text-base">{{ selectedTicket.type }}</span>
-          <span class="text-sm text-gray-500 font-normal">S/{{ selectedTicket.stake | number:'1.2-2' }}</span>
-        </div>
-        <span class="font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-xl text-sm tracking-wide">
-          {{ selectedTicket.totalOdds | number:'1.2-2' }}
-        </span>
-      </div>
-
-      <!-- Selecciones simples / combinadas -->
-      @if (selectedTicket.selections && selectedTicket.selections.length > 0) {
-        @for (sel of selectedTicket.selections; track sel.id || $index) {
-          <div class="px-5 py-4 border-b border-gray-100 last:border-0 relative bg-white">
-
-            <!-- Fila Superior: Icono + Pick + Cuota -->
-            <div class="flex justify-between items-start mb-1">
-              <div class="flex items-center space-x-3">
-                <div class="w-6 h-6 rounded-full bg-[#183965] text-white flex items-center justify-center text-xs shadow-sm flex-shrink-0">âš½</div>
-                <div class="flex items-center space-x-1">
-                  <span class="font-extrabold text-gray-900 text-[15px] leading-tight">{{ sel.tip?.pick || 'Pick no especificado' }}</span>
-                  @if (getSelectionResult(sel) === 'GANADA') {
-                    <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                  } @else if (getSelectionResult(sel) === 'PERDIDA') {
-                    <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
-                  }
-                </div>
-              </div>
-              @if (sel.tip?.odds) {
-                <span class="font-bold text-gray-900 bg-[#F0F2F5] px-2.5 py-1 rounded-lg text-xs flex-shrink-0">{{ sel.tip?.odds | number:'1.2-2' }}</span>
-              }
-            </div>
-
-            <!-- Mercado + Canal + Evento -->
-            <div class="ml-9 space-y-1">
-              <div class="flex items-center space-x-2 flex-wrap gap-1">
-                @if (sel.tip?.market) {
-                  <span class="text-[#6C7A87] text-xs font-medium">{{ sel.tip?.market }}</span>
-                }
-                <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold rounded">
-                  ðŸ“Œ {{ getSelectionChannelName(sel) }}
-                </span>
-              </div>
-              @if (sel.tip?.event) {
-                <div class="text-gray-900 text-xs font-bold flex items-center space-x-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#183965] inline-block"></span>
-                  <span>{{ sel.tip?.event }}</span>
-                </div>
-              }
-            </div>
-
-          </div>
-        }
-      }
-
-      <!-- Bet Builders -->
-      @if (selectedTicket.betBuilders && selectedTicket.betBuilders.length > 0) {
-        @for (bb of selectedTicket.betBuilders; track bb.id || $index) {
-          <div class="px-5 py-4 border-b border-gray-100 last:border-0 relative bg-white">
-
-            <div class="flex justify-between items-start mb-2">
-              <div class="flex items-center space-x-3">
-                <div class="w-6 h-6 rounded-full bg-[#183965] text-white flex items-center justify-center text-xs shadow-sm flex-shrink-0">âš½</div>
-                <span class="font-bold text-[#E54524] text-[15px]">Bet Builder</span>
-              </div>
-              <span class="font-bold text-gray-900 bg-[#F0F2F5] px-2.5 py-1 rounded-lg text-xs flex-shrink-0">
-                {{ (bb.realOdds || bb.expectedOdds) | number:'1.2-2' }}
-              </span>
-            </div>
-
-            @if (bb.selections && bb.selections.length > 0 && bb.selections[0].tip?.event) {
-              <div class="ml-9 mb-3">
-                <div class="text-gray-900 text-xs font-bold flex items-center space-x-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#E54524] inline-block"></span>
-                  <span>{{ bb.selections[0].tip?.event }}</span>
-                </div>
-              </div>
-            }
-
-            <div class="ml-[35px] border-l-2 border-[#E54524] pl-4 space-y-3 py-0.5">
-              @for (bbsel of bb.selections; track bbsel.id || $index) {
-                <div class="relative">
-                  <div class="absolute -left-[21px] top-1.5 w-2.5 h-2.5 bg-white border-2 border-[#E54524] rounded-full z-10"></div>
-                  <div class="flex items-center space-x-1">
-                    <div class="font-bold text-gray-900 text-[14px] leading-snug">{{ bbsel.tip?.pick }}</div>
-                    @if (getSelectionResult(bbsel) === 'GANADA') {
-                      <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                    } @else if (getSelectionResult(bbsel) === 'PERDIDA') {
-                      <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
-                    }
-                  </div>
-                  <div class="flex items-center space-x-2 mt-0.5 flex-wrap gap-1">
-                    @if (bbsel.tip?.market) {
-                      <span class="text-[#6C7A87] text-xs font-medium">{{ bbsel.tip?.market }}</span>
-                    }
-                    <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold rounded">
-                      ðŸ“Œ {{ getSelectionChannelName(bbsel) }}
-                    </span>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        }
-      }
-
-    </div>
-
-    <!-- Pie: Apuesta, Ganancias potenciales y botÃ³n CERRAR -->
-    <div class="bg-white border-t border-gray-100 px-6 py-5">
-      <div class="flex justify-between items-center mb-2">
-        <span class="text-[#6C7A87] text-sm font-medium">Apuesta</span>
-        <span class="font-bold text-gray-900 text-sm">S/{{ selectedTicket.stake | number:'1.2-2' }}</span>
-      </div>
-      <div class="flex justify-between items-center mb-5">
-        <span class="font-bold text-gray-900 text-base">Ganancias potenciales</span>
-        <span class="font-extrabold text-gray-900 text-xl tracking-tight">S/{{ getPotentialWinnings(selectedTicket) }}</span>
-      </div>
-      <button (click)="closeViewTicket()"
-        class="w-full bg-[#1C2025] hover:bg-[#2C323B] text-white font-bold py-3.5 rounded-xl transition-all text-sm tracking-wider uppercase shadow-md active:scale-[0.99]">
-        CERRAR
-      </button>
-    </div>
-
-  </div>
-</div>
-}
+<!-- ══════ MODAL DETALLE TICKET ══════ -->
+<app-ticket-detail-modal 
+  *ngIf="selectedTicket" 
+  [ticket]="selectedTicket" 
+  (close)="closeViewTicket()">
+</app-ticket-detail-modal>

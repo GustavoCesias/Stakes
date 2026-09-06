@@ -1,0 +1,143 @@
+@if (ticket) {
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden" (click)="closeModal()">
+  <div class="bg-white rounded-[24px] shadow-2xl w-[420px] max-w-full max-h-[90vh] flex flex-col overflow-hidden relative" (click)="$event.stopPropagation()">
+    
+    <!-- Area de contenido desplazable -->
+    <div class="flex-1 overflow-y-auto">
+
+      <!-- Encabezado del Ticket: Tipo, Stake y Cuota Total -->
+      <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-gray-900 text-base">{{ ticket.type }}</span>
+          <span class="text-sm text-gray-500 font-normal">S/{{ ticket.stake | number:'1.2-2' }}</span>
+        </div>
+        <span class="font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-xl text-sm tracking-wide">
+          {{ ticket.totalOdds | number:'1.2-2' }}
+        </span>
+      </div>
+
+      <!-- Secciones del Ticket (Apuestas Simples / Combinadas) -->
+      @if (ticket.selections && ticket.selections.length > 0) {
+        @for (sel of ticket.selections; track sel.id || $index) {
+          <div class="px-5 py-4 border-b border-gray-100 last:border-0 relative bg-white">
+            
+            <!-- Fila Superior: Icono + Pick + Cuota -->
+            <div class="flex justify-between items-start mb-1">
+              <div class="flex items-center space-x-3">
+                <div class="w-6 h-6 rounded-full bg-[#183965] text-white flex items-center justify-center text-xs shadow-sm flex-shrink-0">⚽</div>
+                <div class="flex items-center space-x-1">
+                  <span class="font-extrabold text-gray-900 text-[15px] leading-tight">{{ sel.tip?.pick || 'Pick no especificado' }}</span>
+                  @if (getSelectionResult(sel) === 'GANADA') {
+                    <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                  } @else if (getSelectionResult(sel) === 'PERDIDA') {
+                    <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                  } @else if (getSelectionResult(sel) === 'NULA') {
+                    <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                  }
+                </div>
+              </div>
+              @if (sel.tip?.odds) {
+                <span class="font-bold text-gray-900 bg-[#F0F2F5] px-2.5 py-1 rounded-lg text-xs flex-shrink-0">{{ sel.tip?.odds | number:'1.2-2' }}</span>
+              }
+            </div>
+
+            <!-- Fila Intermedia: Mercado y Nombre del Evento/Equipos -->
+            <div class="ml-9 space-y-1">
+              <div class="flex items-center space-x-2 flex-wrap gap-1">
+                @if (sel.tip?.market) {
+                  <span class="text-[#6C7A87] text-xs font-medium">{{ sel.tip?.market }}</span>
+                }
+                <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold rounded">
+                  📌 {{ getSelectionChannelName(sel) }}
+                </span>
+              </div>
+              @if (sel.tip?.event) {
+                <div class="text-gray-900 text-xs font-bold flex items-center space-x-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#183965] inline-block"></span>
+                  <span>{{ sel.tip?.event }}</span>
+                </div>
+              }
+            </div>
+
+          </div>
+        }
+      }
+
+      <!-- Secciones del Ticket (Bet Builders) -->
+      @if (ticket.betBuilders && ticket.betBuilders.length > 0) {
+        @for (bb of ticket.betBuilders; track bb.id || $index) {
+          <div class="px-5 py-4 border-b border-gray-100 last:border-0 relative bg-white">
+            
+            <!-- Fila Superior Bet Builder -->
+            <div class="flex justify-between items-start mb-2">
+              <div class="flex items-center space-x-3">
+                <div class="w-6 h-6 rounded-full bg-[#183965] text-white flex items-center justify-center text-xs shadow-sm flex-shrink-0">⚽</div>
+                <span class="font-bold text-[#E54524] text-[15px]">Bet Builder</span>
+              </div>
+              <span class="font-bold text-gray-900 bg-[#F0F2F5] px-2.5 py-1 rounded-lg text-xs flex-shrink-0">
+                {{ (bb.realOdds || bb.expectedOdds) | number:'1.2-2' }}
+              </span>
+            </div>
+            
+            <!-- Nombre del Evento del Bet Builder -->
+            @if (bb.selections && bb.selections.length > 0 && bb.selections[0].tip?.event) {
+              <div class="ml-9 mb-3">
+                <div class="text-gray-900 text-xs font-bold flex items-center space-x-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#E54524] inline-block"></span>
+                  <span>{{ bb.selections[0].tip?.event }}</span>
+                </div>
+              </div>
+            }
+
+            <!-- Selecciones internas con linea vertical roja -->
+            <div class="ml-[35px] border-l-2 border-[#E54524] pl-4 space-y-3 py-0.5">
+              @for (bbsel of bb.selections; track bbsel.id || $index) {
+                <div class="relative">
+                  <div class="absolute -left-[21px] top-1.5 w-2.5 h-2.5 bg-white border-2 border-[#E54524] rounded-full z-10"></div>
+                  
+                  <div class="flex items-center space-x-1">
+                    <div class="font-bold text-gray-900 text-[14px] leading-snug">{{ bbsel.tip?.pick }}</div>
+                    @if (getSelectionResult(bbsel) === 'GANADA') {
+                      <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                    } @else if (getSelectionResult(bbsel) === 'PERDIDA') {
+                      <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                    } @else if (getSelectionResult(bbsel) === 'NULA') {
+                      <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                    }
+                  </div>
+                  <div class="flex items-center space-x-2 mt-0.5 flex-wrap gap-1">
+                    @if (bbsel.tip?.market) {
+                      <span class="text-[#6C7A87] text-xs font-medium">{{ bbsel.tip?.market }}</span>
+                    }
+                    <span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold rounded">
+                      📌 {{ getSelectionChannelName(bbsel) }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+
+    </div>
+
+    <!-- Pie del Ticket (Resumen) -->
+    <div class="bg-white border-t border-gray-100 px-6 py-5">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-[#6C7A87] text-sm font-medium">Apuesta</span>
+        <span class="font-bold text-gray-900 text-sm">S/{{ ticket.stake | number:'1.2-2' }}</span>
+      </div>
+      <div class="flex justify-between items-center mb-5">
+        <span class="font-bold text-gray-900 text-base">Ganancias potenciales</span>
+        <span class="font-extrabold text-gray-900 text-xl tracking-tight">S/{{ getPotentialWinnings() | number:'1.2-2' }}</span>
+      </div>
+      <button (click)="closeModal()" 
+        class="w-full bg-[#1C2025] hover:bg-[#2C323B] text-white font-bold py-3.5 rounded-xl transition-all text-sm tracking-wider uppercase shadow-md active:scale-[0.99]">
+        CERRAR
+      </button>
+    </div>
+
+  </div>
+</div>
+}

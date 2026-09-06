@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TicketService, Ticket } from '../../services/ticket.service';
 import { BankrollService, BankrollTransaction, BankrollSummary } from '../../services/bankroll.service';
+import { TicketDetailModalComponent } from '../shared/ticket-detail-modal/ticket-detail-modal.component';
 import { ChannelService, Channel } from '../../services/channel.service';
 import { RouterModule } from '@angular/router';
 import { CountResultPipe } from '../../services/count-result.pipe';
@@ -11,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, CountResultPipe],
+  imports: [CommonModule, FormsModule, RouterModule, CountResultPipe, TicketDetailModalComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -186,23 +187,6 @@ export class DashboardComponent implements OnInit {
 
   viewTicket(ticket: Ticket) { this.selectedTicket = ticket; }
   closeViewTicket() { this.selectedTicket = null; }
-
-  getSelectionResult(sel: any): string {
-    if (!sel) return 'PENDIENTE';
-    if (sel.result && sel.result !== 'PENDIENTE') return sel.result;
-    if (sel.tip?.result && sel.tip.result !== 'PENDIENTE') return sel.tip.result;
-    return 'PENDIENTE';
-  }
-
-  getSelectionChannelName(sel: any): string {
-    return sel?.tip?.channel?.name || 'Personal';
-  }
-
-  getPotentialWinnings(ticket: Ticket): string {
-    const stake = ticket.stake || 0;
-    const odds = ticket.totalOdds || 0;
-    return (stake * odds).toFixed(2);
-  }
 
   // Bankroll Calculations
   get netCapitalInjected(): number {
