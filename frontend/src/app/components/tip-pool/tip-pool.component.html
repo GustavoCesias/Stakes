@@ -13,33 +13,7 @@
     </button>
   </div>
 
-  <!-- ══════ FORMULARIO CANAL ══════ -->
-  @if (showChannelForm) {
-  <div class="glass rounded-2xl border border-purple-500/20 p-5 animate-scale-in">
-    <h3 class="text-sm font-semibold text-purple-300 mb-4 flex items-center">
-      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Crear Nuevo Canal
-    </h3>
-    <form (ngSubmit)="saveChannel()" class="flex flex-col md:flex-row gap-3 items-end">
-      <div class="flex-1">
-        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Nombre</label>
-        <input type="text" [(ngModel)]="newChannel.name" name="channelName" required placeholder="Ej. DonJulio VIP"
-          class="w-full bg-white/5 border border-purple-500/20 focus:border-purple-400 focus:ring-1 focus:ring-purple-400 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
-      </div>
-      <div class="flex-1">
-        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Tipo</label>
-        <select [(ngModel)]="newChannel.type" name="channelType" required
-          class="w-full bg-white/5 border border-purple-500/20 focus:border-purple-400 focus:ring-1 focus:ring-purple-400 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
-          <option>FREE</option><option>VIP</option><option>RECOMENDACION</option><option>PROPIO</option>
-        </select>
-      </div>
-      <div class="flex space-x-2 flex-shrink-0">
-        <button type="button" (click)="toggleChannelForm()" class="bg-white/5 hover:bg-white/10 text-gray-300 font-semibold py-2.5 px-4 rounded-xl text-sm transition-all">Cancelar</button>
-        <button type="submit" class="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all">Guardar</button>
-      </div>
-    </form>
-  </div>
-  }
+
 
   <!-- ══════ FORMULARIO NUEVO TIP (MODAL) ══════ -->
   <!-- ESTE BLOQUE SE MOVIÓ AL FINAL DEL ARCHIVO PARA EVITAR EL BUG DE TRANSFORM: TRANSLATE CON POSITION: FIXED -->
@@ -306,6 +280,44 @@
     </div>
   </div>
 </div>
+
+<!-- ══════ FORMULARIO NUEVO CANAL (MODAL FLOTANTE) ══════ -->
+@if (showChannelForm) {
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" (click)="toggleChannelForm()">
+  <div class="glass rounded-2xl shadow-2xl border border-purple-500/20 w-[95%] max-w-lg overflow-hidden animate-scale-in flex flex-col" (click)="$event.stopPropagation()">
+    <div class="h-1 bg-gradient-to-r from-purple-500 to-fuchsia-500 w-full flex-shrink-0"></div>
+    <div class="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+      <h3 class="text-base font-bold text-white flex items-center">
+        <span class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center mr-3 text-sm">📺</span>
+        Crear Nuevo Canal
+      </h3>
+      <button (click)="toggleChannelForm()" class="text-gray-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-lg p-1.5">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="p-6">
+      <form (ngSubmit)="saveChannel()" class="space-y-5">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Nombre</label>
+          <input type="text" [(ngModel)]="newChannel.name" name="channelName" required placeholder="Ej. DonJulio VIP"
+            class="w-full bg-[#121822] border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Tipo</label>
+          <select [(ngModel)]="newChannel.type" name="channelType" required
+            class="w-full bg-[#121822] border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+            <option>FREE</option><option>VIP</option><option>RECOMENDACION</option><option>PROPIO</option>
+          </select>
+        </div>
+        <div class="flex justify-end space-x-3 pt-4 border-t border-white/5 mt-2">
+          <button type="button" (click)="toggleChannelForm()" class="bg-white/5 hover:bg-white/10 text-gray-300 font-semibold py-2.5 px-6 rounded-xl text-sm transition-all">Cancelar</button>
+          <button type="submit" class="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold py-2.5 px-8 rounded-xl shadow-lg shadow-purple-500/20 text-sm transition-all">Guardar Canal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+}
 
 <!-- ══════ FORMULARIO NUEVO TIP (MODAL FLOTANTE) ══════ -->
 @if (showForm) {
