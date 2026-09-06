@@ -11,8 +11,8 @@ export interface BaseMaestraItem {
   date: string;
   event: string;
   sport?: string;
-  league?: string;
   channel?: Channel | null;
+  subgroup?: ChannelSubgroup | null;
   odds: number | null;
   result: string;
   tip?: Tip;
@@ -137,6 +137,7 @@ export class TipPoolComponent implements OnInit {
               sport: firstTip.sport,
               league: firstTip.league,
               channel: bbChannel,
+              subgroup: firstTip.subgroup || null,
               odds: combinedOdds ? Number(combinedOdds) : null,
               result: bbResult,
               betBuilder: bb,
@@ -210,6 +211,7 @@ export class TipPoolComponent implements OnInit {
           sport: first.sport,
           league: first.league,
           channel: first.channel || null,
+          subgroup: first.subgroup || null,
           odds: combinedOdds ? Number(combinedOdds) : null,
           result: bbResult,
           picks: groupTips.map(gt => ({
@@ -232,6 +234,7 @@ export class TipPoolComponent implements OnInit {
         sport: t.sport,
         league: t.league,
         channel: t.channel,
+        subgroup: t.subgroup,
         market: t.market,
         pick: t.pick,
         odds: t.odds ? Number(t.odds) : null,
@@ -251,7 +254,7 @@ export class TipPoolComponent implements OnInit {
       result = result.filter(i => i.channel?.id === Number(this.selectedChannelFilter));
     }
     if (this.selectedSubgroupFilter !== 'ALL') {
-      result = result.filter(i => i.tip?.subgroup?.id === Number(this.selectedSubgroupFilter));
+      result = result.filter(i => i.subgroup?.id === Number(this.selectedSubgroupFilter));
     }
     if (this.filterResult !== 'ALL') {
       result = result.filter(i => i.result === this.filterResult);
