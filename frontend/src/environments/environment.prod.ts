@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: '/api/v1'
+  apiUrl: 'https://stakes-aadd.onrender.com/api/v1'
 };
+
