@@ -71,6 +71,8 @@ public class BackupController {
                 .body(backup);
     }
 
+    private static final org.slf.Logger log = org.slf.LoggerFactory.getLogger(BackupController.class);
+
     @PostMapping("/import")
     @Transactional
     public ResponseEntity<?> importData(@RequestBody BackupData backup) {
@@ -128,6 +130,22 @@ public class BackupController {
                 return channelRepository.save(ch);
             };
 
+            // 3b. ChannelSubgroups mapping
+            Map<Long, ChannelSubgroup> subgroupMap = new java.util.HashMap<>();
+            if (backup.getChannelSubgroups() != null) {
+                for (ChannelSubgroup sg : backup.getChannelSubgroups()) {
+                    Long oldSgId = sg.getId();
+                    sg.setId(null);
+                    if (sg.getChannel() != null) {
+                        sg.setChannel(resolveChannel.apply(sg.getChannel()));
+                    }
+                    ChannelSubgroup savedSg = channelSubgroupRepository.save(sg);
+                    if (oldSgId != null) {
+                        subgroupMap.put(oldSgId, savedSg);
+                    }
+                }
+            }
+
             // 4. Tips mapping
             Map<Long, Tip> tipMap = new java.util.HashMap<>();
             if (backup.getTips() != null) {
@@ -162,6 +180,20 @@ public class BackupController {
                 for (Ticket ticket : backup.getTickets()) {
                     ticket.setId(null);
 
+                    if (ticket.getSubgroup() != null) {
+                        Long oldSgId = ticket.getSubgroup().getId();
+                        if (oldSgId != null && subgroupMap.containsKey(oldSgId)) {
+                            ticket.setSubgroup(subgroupMap.get(oldSgId));
+                        } else {
+                            ChannelSubgroup sg = ticket.getSubgroup();
+                            sg.setId(null);
+                            if (sg.getChannel() != null) {
+                                sg.setChannel(resolveChannel.apply(sg.getChannel()));
+                            }
+                            ticket.setSubgroup(channelSubgroupRepository.save(sg));
+                        }
+                    }
+
                     if (ticket.getSelections() != null) {
                         for (TicketSelection sel : ticket.getSelections()) {
                             sel.setId(null);
@@ -194,9 +226,10 @@ public class BackupController {
             }
 
             return ResponseEntity.ok(Map.of("message", "Respaldo importado correctamente con éxito"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("message", "Error al importar respaldo: " + ex.getMessage()));
+        } catch (Throwable ex) {
+            log.error("Error crítico importando respaldo JSON: ", ex);
+            String detail = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+            return ResponseEntity.status(500).body(Map.of("message", "Error al importar respaldo: " + (detail != null ? detail : ex.toString())));
         }
     }
 }
