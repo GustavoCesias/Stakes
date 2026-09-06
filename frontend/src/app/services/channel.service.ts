@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface Channel {
@@ -22,29 +22,56 @@ export class ChannelService {
 
   private apiUrl = `${environment.apiUrl}/channels`;
 
+  private channelsCache$: Observable<Channel[]> | null = null;
+  private subgroupsCache: Map<number, Observable<ChannelSubgroup[]>> = new Map();
+
   constructor(private http: HttpClient) { }
 
   getChannels(): Observable<Channel[]> {
-    return this.http.get<Channel[]>(this.apiUrl);
+    if (!this.channelsCache$) {
+      this.channelsCache$ = this.http.get<Channel[]>(this.apiUrl).pipe(
+        shareReplay(1)
+      );
+    }
+    return this.channelsCache$;
+  }
+
+  invalidateCache(): void {
+    this.channelsCache$ = null;
+    this.subgroupsCache.clear();
   }
 
   createChannel(channel: Channel): Observable<Channel> {
-    return this.http.post<Channel>(this.apiUrl, channel);
+    return this.http.post<Channel>(this.apiUrl, channel).pipe(
+      tap(() => this.invalidateCache())
+    );
   }
 
   getSubgroups(channelId: number): Observable<ChannelSubgroup[]> {
-    return this.http.get<ChannelSubgroup[]>(`${this.apiUrl}/${channelId}/subgroups`);
+    if (!this.subgroupsCache.has(channelId)) {
+      const obs$ = this.http.get<ChannelSubgroup[]>(`${this.apiUrl}/${channelId}/subgroups`).pipe(
+        shareReplay(1)
+      );
+      this.subgroupsCache.set(channelId, obs$);
+    }
+    return this.subgroupsCache.get(channelId)!;
   }
 
   createSubgroup(channelId: number, subgroup: ChannelSubgroup): Observable<ChannelSubgroup> {
-    return this.http.post<ChannelSubgroup>(`${this.apiUrl}/${channelId}/subgroups`, subgroup);
+    return this.http.post<ChannelSubgroup>(`${this.apiUrl}/${channelId}/subgroups`, subgroup).pipe(
+      tap(() => this.subgroupsCache.delete(channelId))
+    );
   }
 
   deleteChannel(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      tap(() => this.invalidateCache())
+    );
   }
 
   deleteSubgroup(subgroupId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/subgroups/${subgroupId}`);
+    return this.http.delete<void>(`${this.apiUrl}/subgroups/${subgroupId}`).pipe(
+      tap(() => this.subgroupsCache.clear())
+    );
   }
 }
