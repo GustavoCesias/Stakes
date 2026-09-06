@@ -6,6 +6,7 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:gustavo232002}
   jpa:
+    database-platform: ${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.MySQLDialect}
     hibernate:
       ddl-auto: update
     show-sql: true
@@ -15,6 +16,7 @@ spring:
 
 server:
   port: ${PORT:8080}
+
 
 
 
