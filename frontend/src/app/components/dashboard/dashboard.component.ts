@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TicketService, Ticket } from '../../services/ticket.service';
@@ -6,6 +6,7 @@ import { BankrollService, BankrollTransaction, BankrollSummary } from '../../ser
 import { ChannelService, Channel } from '../../services/channel.service';
 import { RouterModule } from '@angular/router';
 import { CountResultPipe } from '../../services/count-result.pipe';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,6 +19,7 @@ export class DashboardComponent implements OnInit {
   private ticketService = inject(TicketService);
   private bankrollService = inject(BankrollService);
   private channelService = inject(ChannelService);
+  private destroyRef = inject(DestroyRef);
   Number = Number;
 
   allRawTickets: Ticket[] = [];
@@ -57,13 +59,17 @@ export class DashboardComponent implements OnInit {
   }
 
   loadTickets() {
-    this.ticketService.getTickets().subscribe({
-      next: (data) => {
-        this.allRawTickets = data;
-        this.isLoading = false;
-      },
-      error: () => { this.isLoading = false; }
-    });
+    // Uses takeUntilDestroyed so this subscription stays alive for the component's lifetime.
+    // When TicketService.refresh() is called (after any mutation), this auto-updates.
+    this.ticketService.getTickets()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.allRawTickets = data;
+          this.isLoading = false;
+        },
+        error: () => { this.isLoading = false; }
+      });
   }
 
   loadChannels() {

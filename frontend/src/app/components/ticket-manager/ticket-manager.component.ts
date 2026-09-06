@@ -1,10 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { TicketService, Ticket, TicketSelection, BetBuilder } from '../../services/ticket.service';
 import { TipService, Tip } from '../../services/tip.service';
 import { ChannelService, ChannelSubgroup, Channel } from '../../services/channel.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export interface PickForm {
   selectionId?: number;
@@ -90,6 +91,7 @@ export class TicketManagerComponent implements OnInit {
   private tipService = inject(TipService);
   private channelService = inject(ChannelService);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
 
   sanitizeTicket(ticket: Ticket): Ticket {
     if (ticket.selections && ticket.betBuilders && ticket.betBuilders.length > 0) {
@@ -363,13 +365,16 @@ export class TicketManagerComponent implements OnInit {
   }
 
   loadTickets() {
-    this.ticketService.getTickets().subscribe({
-      next: (data) => {
-        this.allTickets = data.map(t => this.sanitizeTicket(t));
-        this.applyFilter();
-      },
-      error: (err) => console.error('Error loading tickets', err)
-    });
+    // Reactive subscription: stays alive and auto-updates when BehaviorSubject emits
+    this.ticketService.getTickets()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.allTickets = data.map(t => this.sanitizeTicket(t));
+          this.applyFilter();
+        },
+        error: (err) => console.error('Error loading tickets', err)
+      });
   }
 
   filterTickets() {
@@ -838,8 +843,9 @@ export class TicketManagerComponent implements OnInit {
     };
     
     this.ticketService.updateResult(ticket.id!, request).subscribe({
-      next: (updated) => {
-        this.loadTickets();
+      next: () => {
+        // No need to call loadTickets() — TicketService.refresh() already pushes
+        // fresh data to ALL subscribers (including this component) via BehaviorSubject
       },
       error: (err) => alert('Error actualizando resultado del ticket: ' + err.message)
     });
