@@ -187,6 +187,23 @@ export class DashboardComponent implements OnInit {
   viewTicket(ticket: Ticket) { this.selectedTicket = ticket; }
   closeViewTicket() { this.selectedTicket = null; }
 
+  getSelectionResult(sel: any): string {
+    if (!sel) return 'PENDIENTE';
+    if (sel.result && sel.result !== 'PENDIENTE') return sel.result;
+    if (sel.tip?.result && sel.tip.result !== 'PENDIENTE') return sel.tip.result;
+    return 'PENDIENTE';
+  }
+
+  getSelectionChannelName(sel: any): string {
+    return sel?.tip?.channel?.name || 'Personal';
+  }
+
+  getPotentialWinnings(ticket: Ticket): string {
+    const stake = ticket.stake || 0;
+    const odds = ticket.totalOdds || 0;
+    return (stake * odds).toFixed(2);
+  }
+
   // Bankroll Calculations
   get netCapitalInjected(): number {
     return (Number(this.initialBalance) || 0) + (Number(this.totalDeposits) || 0) - (Number(this.totalWithdrawals) || 0);
