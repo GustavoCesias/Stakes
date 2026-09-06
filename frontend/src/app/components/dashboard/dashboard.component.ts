@@ -25,6 +25,7 @@ export class DashboardComponent implements OnInit {
   allRawTickets: Ticket[] = [];
   channels: Channel[] = [];
   isLoading = true;
+  selectedTicket: Ticket | null = null;
 
   // View & Filter state
   activeMode: 'mine' | 'tipster' = 'mine';
@@ -159,6 +160,32 @@ export class DashboardComponent implements OnInit {
   }
 
   get profitPositive(): boolean { return this.totalProfit >= 0; }
+
+  /** Returns the event summary string for a ticket (e.g. "Real Madrid vs Barça +1") */
+  getEventSummary(ticket: Ticket): string {
+    const events = new Set<string>();
+    if (ticket.selections) {
+      ticket.selections.forEach(sel => {
+        if (sel.tip?.event) events.add(sel.tip.event);
+      });
+    }
+    if (ticket.betBuilders) {
+      ticket.betBuilders.forEach(bb => {
+        if (bb.selections) {
+          bb.selections.forEach(sel => {
+            if (sel.tip?.event) events.add(sel.tip.event);
+          });
+        }
+      });
+    }
+    const arr = Array.from(events);
+    if (arr.length === 0) return ticket.bookmaker || 'Sin evento';
+    if (arr.length === 1) return arr[0];
+    return `${arr[0]} +${arr.length - 1} más`;
+  }
+
+  viewTicket(ticket: Ticket) { this.selectedTicket = ticket; }
+  closeViewTicket() { this.selectedTicket = null; }
 
   // Bankroll Calculations
   get netCapitalInjected(): number {
