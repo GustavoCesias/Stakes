@@ -101,12 +101,32 @@ public class BackupController {
                 for (Channel ch : backup.getChannels()) {
                     Long oldId = ch.getId();
                     ch.setId(null);
-                    Channel saved = channelRepository.save(ch);
+                    Channel saved;
+                    java.util.Optional<Channel> existing = channelRepository.findByName(ch.getName());
+                    if (existing.isPresent()) {
+                        saved = existing.get();
+                    } else {
+                        saved = channelRepository.save(ch);
+                    }
                     if (oldId != null) {
                         channelMap.put(oldId, saved);
                     }
                 }
             }
+
+            // Helper to get or save channel
+            java.util.function.Function<Channel, Channel> resolveChannel = (ch) -> {
+                if (ch == null) return null;
+                if (ch.getId() != null && channelMap.containsKey(ch.getId())) {
+                    return channelMap.get(ch.getId());
+                }
+                if (ch.getName() != null) {
+                    java.util.Optional<Channel> existing = channelRepository.findByName(ch.getName());
+                    if (existing.isPresent()) return existing.get();
+                }
+                ch.setId(null);
+                return channelRepository.save(ch);
+            };
 
             // 4. Tips mapping
             Map<Long, Tip> tipMap = new java.util.HashMap<>();
@@ -114,15 +134,8 @@ public class BackupController {
                 for (Tip tip : backup.getTips()) {
                     Long oldTipId = tip.getId();
                     tip.setId(null);
-                    if (tip.getChannel() != null && tip.getChannel().getId() != null) {
-                        Channel matched = channelMap.get(tip.getChannel().getId());
-                        if (matched != null) {
-                            tip.setChannel(matched);
-                        } else {
-                            tip.getChannel().setId(null);
-                            Channel savedCh = channelRepository.save(tip.getChannel());
-                            tip.setChannel(savedCh);
-                        }
+                    if (tip.getChannel() != null) {
+                        tip.setChannel(resolveChannel.apply(tip.getChannel()));
                     }
                     Tip savedTip = tipRepository.save(tip);
                     if (oldTipId != null) {
@@ -131,37 +144,51 @@ public class BackupController {
                 }
             }
 
+            // Helper to resolve Tip for selection
+            java.util.function.Function<Tip, Tip> resolveTip = (t) -> {
+                if (t == null) return null;
+                if (t.getId() != null && tipMap.containsKey(t.getId())) {
+                    return tipMap.get(t.getId());
+                }
+                t.setId(null);
+                if (t.getChannel() != null) {
+                    t.setChannel(resolveChannel.apply(t.getChannel()));
+                }
+                return tipRepository.save(t);
+            };
+
             // 5. Tickets mapping
             if (backup.getTickets() != null) {
                 for (Ticket ticket : backup.getTickets()) {
                     ticket.setId(null);
+
                     if (ticket.getSelections() != null) {
                         for (TicketSelection sel : ticket.getSelections()) {
                             sel.setId(null);
                             sel.setTicket(ticket);
                             if (sel.getTip() != null) {
-                                Tip t = sel.getTip();
-                                Long oldTipId = t.getId();
-                                if (oldTipId != null && tipMap.containsKey(oldTipId)) {
-                                    sel.setTip(tipMap.get(oldTipId));
-                                } else {
-                                    t.setId(null);
-                                    if (t.getChannel() != null && t.getChannel().getId() != null) {
-                                        Channel matched = channelMap.get(t.getChannel().getId());
-                                        if (matched != null) {
-                                            t.setChannel(matched);
-                                        } else {
-                                            t.getChannel().setId(null);
-                                            Channel savedCh = channelRepository.save(t.getChannel());
-                                            t.setChannel(savedCh);
-                                        }
+                                sel.setTip(resolveTip.apply(sel.getTip()));
+                            }
+                        }
+                    }
+
+                    if (ticket.getBetBuilders() != null) {
+                        for (BetBuilder bb : ticket.getBetBuilders()) {
+                            bb.setId(null);
+                            bb.setTicket(ticket);
+                            if (bb.getSelections() != null) {
+                                for (TicketSelection sel : bb.getSelections()) {
+                                    sel.setId(null);
+                                    sel.setTicket(ticket);
+                                    sel.setBetBuilder(bb);
+                                    if (sel.getTip() != null) {
+                                        sel.setTip(resolveTip.apply(sel.getTip()));
                                     }
-                                    Tip savedTip = tipRepository.save(t);
-                                    sel.setTip(savedTip);
                                 }
                             }
                         }
                     }
+
                     ticketRepository.save(ticket);
                 }
             }
@@ -169,7 +196,7 @@ public class BackupController {
             return ResponseEntity.ok(Map.of("message", "Respaldo importado correctamente con éxito"));
         } catch (Exception ex) {
             ex.printStackTrace();
-            return ResponseEntity.internalServerError().body(Map.of("message", "Error al importar respaldo: " + ex.getMessage()));
+            return ResponseEntity.status(500).body(Map.of("message", "Error al importar respaldo: " + ex.getMessage()));
         }
     }
 }
