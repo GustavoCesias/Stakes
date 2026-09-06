@@ -17,8 +17,8 @@
       </div>
 
       <!-- Secciones del Ticket (Apuestas Simples / Combinadas) -->
-      @if (ticket.selections && ticket.selections.length > 0) {
-        @for (sel of ticket.selections; track sel.id || $index) {
+      @if (getRegularSelections().length > 0) {
+        @for (sel of getRegularSelections(); track sel.id || $index) {
           <div class="px-5 py-4 border-b border-gray-100 last:border-0 relative bg-white">
             
             <!-- Fila Superior: Icono + Pick + Cuota -->

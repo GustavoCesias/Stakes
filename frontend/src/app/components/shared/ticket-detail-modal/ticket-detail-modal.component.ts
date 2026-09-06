@@ -34,4 +34,25 @@ export class TicketDetailModalComponent {
     const odds = this.ticket.totalOdds || 0;
     return (stake * odds).toFixed(2);
   }
+
+  getRegularSelections(): any[] {
+    if (!this.ticket || !this.ticket.selections) return [];
+    if (!this.ticket.betBuilders || this.ticket.betBuilders.length === 0) return this.ticket.selections;
+
+    const bbSelectionIds = new Set<number>();
+    const bbTipIds = new Set<number>();
+
+    this.ticket.betBuilders.forEach(bb => {
+      bb.selections?.forEach(sel => {
+        if (sel.id) bbSelectionIds.add(sel.id);
+        if (sel.tip?.id) bbTipIds.add(sel.tip.id);
+      });
+    });
+
+    return this.ticket.selections.filter(sel => {
+      if (sel.id && bbSelectionIds.has(sel.id)) return false;
+      if (sel.tip?.id && bbTipIds.has(sel.tip.id)) return false;
+      return true;
+    });
+  }
 }
