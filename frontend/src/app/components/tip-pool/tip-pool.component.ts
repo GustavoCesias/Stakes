@@ -369,12 +369,14 @@ export class TipPoolComponent implements OnInit {
       this.editingTip = { ...item.tip };
     }
     this.showForm = true;
-    this.onChannelSelected();
+    this.onChannelSelected(false);
   }
 
-  onChannelSelected() {
+  onChannelSelected(clearSubgroup: boolean = true) {
     this.formSubgroups = [];
-    this.editingTip.subgroup = null;
+    if (clearSubgroup) {
+      this.editingTip.subgroup = null;
+    }
     if (this.editingTip.channel?.id) {
       this.channelService.getSubgroups(this.editingTip.channel.id).subscribe({
         next: (sg) => this.formSubgroups = sg,
