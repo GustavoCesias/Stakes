@@ -63,6 +63,18 @@ export class ChannelService {
     );
   }
 
+  updateChannel(id: number, channel: Channel): Observable<Channel> {
+    return this.http.put<Channel>(`${this.apiUrl}/${id}`, channel).pipe(
+      tap(() => this.invalidateCache())
+    );
+  }
+
+  updateSubgroup(id: number, subgroup: ChannelSubgroup, channelId: number): Observable<ChannelSubgroup> {
+    return this.http.put<ChannelSubgroup>(`${this.apiUrl}/subgroups/${id}`, subgroup).pipe(
+      tap(() => this.subgroupsCache.delete(channelId))
+    );
+  }
+
   deleteChannel(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       tap(() => this.invalidateCache())

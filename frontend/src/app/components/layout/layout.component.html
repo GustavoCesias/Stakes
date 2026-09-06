@@ -89,13 +89,22 @@
                 'bg-purple-500/10 text-purple-400': channel.type === 'RECOMENDACION',
                 'bg-gray-500/10 text-gray-400': !channel.type
               }">{{ channel.type }}</span>
-            <button (click)="deleteChannel(channel, $event)"
-              class="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 hover:bg-white/5 rounded transition-all"
-              title="Eliminar canal">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-              </svg>
-            </button>
+            <div class="opacity-0 group-hover:opacity-100 flex items-center">
+              <button (click)="openManageChannelModal(channel, $event)"
+                class="p-1 text-gray-500 hover:text-blue-400 hover:bg-white/5 rounded transition-all mr-1"
+                title="Editar canal">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                </svg>
+              </button>
+              <button (click)="deleteChannel(channel, $event)"
+                class="p-1 text-gray-500 hover:text-red-400 hover:bg-white/5 rounded transition-all"
+                title="Eliminar canal">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
           </a>
         }
         @if (channels.length === 0) {
@@ -216,6 +225,76 @@
         class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-lg shadow-emerald-500/20">
         Guardar
       </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ══════════════════════════════════════════
+     MODAL: Administrar Canal
+══════════════════════════════════════════ -->
+@if (showManageChannelModal && editingChannel) {
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" (click)="closeManageChannelModal()">
+  <div class="glass rounded-2xl shadow-2xl border border-white/10 w-[420px] p-6 animate-scale-in" (click)="$event.stopPropagation()">
+
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/20 flex items-center justify-center">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <h3 class="text-base font-bold text-white">Administrar Canal</h3>
+      </div>
+      <button (click)="closeManageChannelModal()" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-all text-sm">✕</button>
+    </div>
+
+    <div class="space-y-4">
+      <!-- Edición del Canal -->
+      <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+        <label class="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wide">Editar Canal</label>
+        <div class="flex space-x-2">
+          <input type="text" [(ngModel)]="editingChannel.name"
+            class="flex-1 bg-[#121822] border border-white/10 focus:border-blue-500 rounded-lg text-white px-3 py-1.5 text-sm outline-none transition-all"
+            placeholder="Nombre">
+          <select [(ngModel)]="editingChannel.type"
+            class="w-28 bg-[#121822] border border-white/10 focus:border-blue-500 rounded-lg text-white px-2 py-1.5 text-xs outline-none transition-all appearance-none cursor-pointer">
+            <option value="GENERAL">GENERAL</option>
+            <option value="VIP">VIP</option>
+            <option value="FREE">FREE</option>
+            <option value="PROPIO">PROPIO</option>
+          </select>
+          <button (click)="saveEditedChannel()" [disabled]="!editingChannel.name" class="px-3 bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50">Guardar</button>
+        </div>
+      </div>
+
+      <!-- Gestión de Subcanales -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">Subcanales / Etiquetas</label>
+        <div class="space-y-2 mb-3 max-h-[150px] overflow-y-auto custom-scrollbar pr-1">
+          @for (sg of manageSubchannels; track sg.id) {
+            <div class="flex items-center space-x-2 bg-white/5 p-2 rounded-lg border border-white/10 group">
+              <input type="text" [(ngModel)]="sg.name" (blur)="updateSubchannel(sg, sg.name)" (keyup.enter)="updateSubchannel(sg, sg.name)"
+                class="flex-1 bg-transparent border-none text-white text-sm outline-none px-1" placeholder="Nombre de etiqueta">
+              <button (click)="deleteSubchannel(sg)" class="w-6 h-6 rounded bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100" title="Eliminar subcanal">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+          }
+          @if (manageSubchannels.length === 0) {
+            <div class="text-xs text-gray-500 text-center py-2">Sin subcanales creados</div>
+          }
+        </div>
+        
+        <!-- Añadir Subcanal -->
+        <div class="flex space-x-2">
+          <input type="text" [(ngModel)]="newSubchannelName" (keyup.enter)="createSubchannel()"
+            class="flex-1 bg-white/5 border border-white/10 focus:border-blue-500 rounded-lg text-white px-3 py-1.5 text-sm outline-none transition-all"
+            placeholder="Añadir nuevo subcanal...">
+          <button (click)="createSubchannel()" [disabled]="!newSubchannelName.trim()" class="px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50">Añadir</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

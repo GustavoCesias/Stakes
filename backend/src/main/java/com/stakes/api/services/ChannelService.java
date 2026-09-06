@@ -45,6 +45,19 @@ public class ChannelService {
         return channelSubgroupRepository.save(subgroup);
     }
 
+    public Channel updateChannel(Long id, Channel channelDetails) {
+        Channel channel = channelRepository.findById(id).orElseThrow();
+        channel.setName(channelDetails.getName());
+        channel.setType(channelDetails.getType());
+        return channelRepository.save(channel);
+    }
+
+    public ChannelSubgroup updateSubgroup(Long id, ChannelSubgroup subgroupDetails) {
+        ChannelSubgroup subgroup = channelSubgroupRepository.findById(id).orElseThrow();
+        subgroup.setName(subgroupDetails.getName());
+        return channelSubgroupRepository.save(subgroup);
+    }
+
     @Transactional
     public void deleteSubgroup(Long subgroupId) {
         ticketRepository.nullifySubgroupId(subgroupId);

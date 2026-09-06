@@ -54,6 +54,12 @@ export class TipService {
     );
   }
 
+  updateTipsBatch(tips: Tip[]): Observable<Tip[]> {
+    return this.http.put<Tip[]>(`${this.apiUrl}/batch`, tips).pipe(
+      tap(() => this.invalidateCache())
+    );
+  }
+
   deleteTip(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       tap(() => this.invalidateCache())

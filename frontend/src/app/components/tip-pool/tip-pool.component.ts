@@ -20,6 +20,7 @@ export interface BaseMaestraItem {
   pick?: string;
   betBuilder?: BetBuilder;
   picks?: { market: string; pick: string; result?: string }[];
+  groupTips?: Tip[];
 }
 
 @Component({
@@ -47,6 +48,7 @@ export class TipPoolComponent implements OnInit {
   formSubgroups: ChannelSubgroup[] = [];
 
   editingTip: Partial<Tip> = this.getDefaultTip();
+  editingBetBuilderTips: Tip[] | null = null;
 
   newChannel: Partial<Channel> = { type: 'VIP' };
 
@@ -142,7 +144,8 @@ export class TipPoolComponent implements OnInit {
                 market: s.tip?.market || 'Mercado',
                 pick: s.tip?.pick || 'Selección',
                 result: s.result || s.tip?.result || 'PENDIENTE'
-              }))
+              })),
+              groupTips: bb.selections.map(s => s.tip).filter(t => !!t) as Tip[]
             });
           }
         });
@@ -213,7 +216,8 @@ export class TipPoolComponent implements OnInit {
             market: gt.market || 'Mercado',
             pick: gt.pick || 'Selección',
             result: gt.result || 'PENDIENTE'
-          }))
+          })),
+          groupTips: groupTips
         });
       }
     });
@@ -353,12 +357,16 @@ export class TipPoolComponent implements OnInit {
   }
 
   editTip(item: BaseMaestraItem) {
-    if (item.type === 'TIP' && item.tip) {
-      this.isEditing = true;
+    this.isEditing = true;
+    if (item.type === 'BET_BUILDER' && item.groupTips && item.groupTips.length > 0) {
+      this.editingBetBuilderTips = item.groupTips;
+      this.editingTip = { ...item.groupTips[0] };
+    } else if (item.tip) {
+      this.editingBetBuilderTips = null;
       this.editingTip = { ...item.tip };
-      this.onChannelSelected(); // Load subgroups for the current channel
-      this.showForm = true;
     }
+    this.showForm = true;
+    this.onChannelSelected();
   }
 
   onChannelSelected() {
@@ -414,27 +422,51 @@ export class TipPoolComponent implements OnInit {
   }
 
   saveTip() {
-    if (this.editingTip.event && this.editingTip.market) {
-      if (this.isEditing && this.editingTip.id) {
+    if (!this.editingTip.event || !this.editingTip.date) return;
+
+    if (this.isEditing) {
+      if (this.editingBetBuilderTips) {
+        // Batch update for Bet Builder
+        const updated = this.editingBetBuilderTips.map(t => ({
+          ...t,
+          channel: this.editingTip.channel || null,
+          subgroup: this.editingTip.subgroup || null,
+          date: this.editingTip.date || '',
+          event: this.editingTip.event || '',
+          sport: this.editingTip.sport || '',
+          league: this.editingTip.league || ''
+        })) as Tip[];
+        this.tipService.updateTipsBatch(updated).subscribe({
+          next: () => {
+            this.cancelForm();
+            this.loadTips(); // recargar
+          },
+          error: (err) => console.error('Error actualizando BetBuilder tips', err)
+        });
+      } else if (this.editingTip.id) {
+        // Single update
         this.tipService.updateTip(this.editingTip.id, this.editingTip as Tip).subscribe({
           next: (saved) => {
             const idx = this.tips.findIndex(t => t.id === saved.id);
-            if (idx !== -1) this.tips[idx] = saved;
+            if (idx !== -1) {
+              this.tips[idx] = saved;
+            }
+            this.cancelForm();
             this.loadTips();
-            this.showForm = false;
           },
-          error: (err) => alert('Error actualizando recomendación. Error: ' + err.message)
-        });
-      } else {
-        this.tipService.createTip(this.editingTip as Tip).subscribe({
-          next: (saved) => {
-            this.tips.push(saved);
-            this.loadTips();
-            this.showForm = false;
-          },
-          error: (err) => alert('Error guardando recomendación. Error: ' + err.message)
+          error: (err) => console.error('Error editando tip', err)
         });
       }
+    } else {
+      if (!this.editingTip.market || !this.editingTip.pick) return;
+      this.tipService.createTip(this.editingTip as Tip).subscribe({
+        next: (saved) => {
+          this.tips.push(saved);
+          this.cancelForm();
+          this.loadTips();
+        },
+        error: (err) => console.error('Error guardando tip', err)
+      });
     }
   }
 

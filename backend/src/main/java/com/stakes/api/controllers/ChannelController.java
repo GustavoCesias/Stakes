@@ -43,6 +43,16 @@ public class ChannelController {
         return channelService.createSubgroup(channelId, subgroup);
     }
 
+    @PutMapping("/{id}")
+    public Channel updateChannel(@PathVariable Long id, @RequestBody Channel channel) {
+        return channelService.updateChannel(id, channel);
+    }
+
+    @PutMapping("/subgroups/{id}")
+    public ChannelSubgroup updateSubgroup(@PathVariable Long id, @RequestBody ChannelSubgroup subgroup) {
+        return channelService.updateSubgroup(id, subgroup);
+    }
+
     @DeleteMapping("/subgroups/{subgroupId}")
     public ResponseEntity<Void> deleteSubgroup(@PathVariable Long subgroupId) {
         channelService.deleteSubgroup(subgroupId);

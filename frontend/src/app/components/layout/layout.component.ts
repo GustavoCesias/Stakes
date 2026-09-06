@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet, RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ChannelService, Channel } from '../../services/channel.service';
+import { ChannelService, Channel, ChannelSubgroup } from '../../services/channel.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -20,6 +20,11 @@ export class LayoutComponent implements OnInit {
 
   showNewChannelModal = false;
   newChannel: Channel = { name: '', type: 'GENERAL' };
+
+  showManageChannelModal = false;
+  editingChannel: Channel | null = null;
+  manageSubchannels: ChannelSubgroup[] = [];
+  newSubchannelName = '';
 
   private avatarColors = [
     'linear-gradient(135deg,#6366f1,#8b5cf6)',
@@ -134,8 +139,77 @@ export class LayoutComponent implements OnInit {
           if (this.router.url.includes(`/tickets/channel/${channel.id}`)) {
             this.router.navigate(['/tickets/mine']);
           }
+          if (this.editingChannel?.id === channel.id) {
+            this.closeManageChannelModal();
+          }
         },
         error: (err) => alert('Error eliminando canal: ' + (err.error?.message || err.message))
+      });
+    }
+  }
+
+  // --- Channel Management ---
+
+  openManageChannelModal(channel: Channel, event?: MouseEvent) {
+    if (event) event.stopPropagation();
+    this.editingChannel = { ...channel };
+    this.manageSubchannels = [];
+    this.newSubchannelName = '';
+    this.showManageChannelModal = true;
+    if (channel.id) {
+      this.channelService.getSubgroups(channel.id).subscribe(sg => this.manageSubchannels = sg);
+    }
+  }
+
+  closeManageChannelModal() {
+    this.showManageChannelModal = false;
+    this.editingChannel = null;
+  }
+
+  saveEditedChannel() {
+    if (!this.editingChannel || !this.editingChannel.id) return;
+    this.channelService.updateChannel(this.editingChannel.id, this.editingChannel).subscribe({
+      next: (saved) => {
+        const idx = this.channels.findIndex(c => c.id === saved.id);
+        if (idx !== -1) this.channels[idx] = saved;
+        this.closeManageChannelModal();
+      },
+      error: (err) => alert('Error actualizando canal')
+    });
+  }
+
+  createSubchannel() {
+    if (!this.editingChannel?.id || !this.newSubchannelName.trim()) return;
+    const sg: ChannelSubgroup = { name: this.newSubchannelName.trim() };
+    this.channelService.createSubgroup(this.editingChannel.id, sg).subscribe({
+      next: (saved) => {
+        this.manageSubchannels.push(saved);
+        this.newSubchannelName = '';
+      },
+      error: (err) => alert('Error creando subcanal')
+    });
+  }
+
+  updateSubchannel(sg: ChannelSubgroup, newName: string) {
+    if (!sg.id || !this.editingChannel?.id || !newName.trim()) return;
+    sg.name = newName.trim();
+    this.channelService.updateSubgroup(sg.id, sg, this.editingChannel.id).subscribe({
+      next: (saved) => {
+        const idx = this.manageSubchannels.findIndex(s => s.id === saved.id);
+        if (idx !== -1) this.manageSubchannels[idx] = saved;
+      },
+      error: (err) => alert('Error actualizando subcanal')
+    });
+  }
+
+  deleteSubchannel(sg: ChannelSubgroup) {
+    if (!sg.id) return;
+    if (confirm(`¿Eliminar subcanal "${sg.name}"? Los tips asociados quedarán sin subcanal.`)) {
+      this.channelService.deleteSubgroup(sg.id).subscribe({
+        next: () => {
+          this.manageSubchannels = this.manageSubchannels.filter(s => s.id !== sg.id);
+        },
+        error: (err) => alert('Error eliminando subcanal')
       });
     }
   }

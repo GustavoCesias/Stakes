@@ -41,4 +41,12 @@ public class TipController {
     public ResponseEntity<Tip> updateTip(@PathVariable Long id, @RequestBody Tip tip) {
         return ResponseEntity.ok(tipService.updateTip(id, tip));
     }
+
+    @PutMapping("/batch")
+    public ResponseEntity<List<Tip>> updateTipsBatch(@RequestBody List<Tip> tips) {
+        for (Tip t : tips) {
+            tipService.updateTip(t.getId(), t);
+        }
+        return ResponseEntity.ok(tips);
+    }
 }
