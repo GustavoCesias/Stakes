@@ -11,6 +11,7 @@ export interface BaseMaestraItem {
   date: string;
   event: string;
   sport?: string;
+  league?: string;
   channel?: Channel | null;
   subgroup?: ChannelSubgroup | null;
   odds: number | null;
