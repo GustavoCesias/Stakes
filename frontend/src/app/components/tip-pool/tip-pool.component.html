@@ -1,0 +1,347 @@
+<div class="space-y-5 animate-fade-in-up">
+
+  <!-- ══════ PAGE HEADER ══════ -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-2xl font-bold text-white" style="font-family:'Space Grotesk',sans-serif">Base Maestra</h2>
+      <p class="text-sm text-gray-500 mt-0.5">Picks y recomendaciones individuales o combinadas por canal.</p>
+    </div>
+    <button (click)="openNewForm()"
+      class="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      <span>Nuevo Tip</span>
+    </button>
+  </div>
+
+  <!-- ══════ FORMULARIO CANAL ══════ -->
+  @if (showChannelForm) {
+  <div class="glass rounded-2xl border border-purple-500/20 p-5 animate-scale-in">
+    <h3 class="text-sm font-semibold text-purple-300 mb-4 flex items-center">
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Crear Nuevo Canal
+    </h3>
+    <form (ngSubmit)="saveChannel()" class="flex flex-col md:flex-row gap-3 items-end">
+      <div class="flex-1">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Nombre</label>
+        <input type="text" [(ngModel)]="newChannel.name" name="channelName" required placeholder="Ej. DonJulio VIP"
+          class="w-full bg-white/5 border border-purple-500/20 focus:border-purple-400 focus:ring-1 focus:ring-purple-400 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+      </div>
+      <div class="flex-1">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Tipo</label>
+        <select [(ngModel)]="newChannel.type" name="channelType" required
+          class="w-full bg-white/5 border border-purple-500/20 focus:border-purple-400 focus:ring-1 focus:ring-purple-400 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+          <option>FREE</option><option>VIP</option><option>RECOMENDACION</option><option>PROPIO</option>
+        </select>
+      </div>
+      <div class="flex space-x-2 flex-shrink-0">
+        <button type="button" (click)="toggleChannelForm()" class="bg-white/5 hover:bg-white/10 text-gray-300 font-semibold py-2.5 px-4 rounded-xl text-sm transition-all">Cancelar</button>
+        <button type="submit" class="bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all">Guardar</button>
+      </div>
+    </form>
+  </div>
+  }
+
+  <!-- ══════ FORMULARIO NUEVO TIP ══════ -->
+  @if (showForm) {
+  <div class="glass rounded-2xl border border-blue-500/15 shadow-2xl overflow-hidden animate-scale-in">
+    <div class="h-0.5 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+    <div class="p-6">
+      <h3 class="text-base font-bold text-white mb-5 flex items-center">
+        <span class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center mr-3 text-sm">📝</span>
+        {{ isEditing ? 'Editar Recomendación' : 'Registrar Nueva Recomendación' }}
+      </h3>
+
+      <form (ngSubmit)="saveTip()" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Canal -->
+        <div class="md:col-span-3">
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Canal / Origen</label>
+          <div class="flex space-x-2">
+            <select [(ngModel)]="editingTip.channel" [compareWith]="compareChannels" name="channel"
+              class="flex-1 bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+              <option [ngValue]="null">📡 Personal / Sin Canal</option>
+              @for (ch of channels; track ch.id) {
+                <option [ngValue]="ch">{{ ch.name }} ({{ ch.type }})</option>
+              }
+            </select>
+            <button type="button" (click)="toggleChannelForm()"
+              class="bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold py-2.5 px-4 rounded-xl text-sm transition-all">
+              + Nuevo
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Fecha</label>
+          <input type="date" [(ngModel)]="editingTip.date" name="date" required
+            class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Evento (Partido)</label>
+          <input type="text" [(ngModel)]="editingTip.event" name="event" required placeholder="Ej. Real Madrid vs Barcelona"
+            class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Mercado</label>
+          <input type="text" [(ngModel)]="editingTip.market" name="market" required placeholder="Ej. Goles Totales"
+            class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Pronóstico (Pick)</label>
+          <input type="text" [(ngModel)]="editingTip.pick" name="pick" required placeholder="Ej. Más de 2.5"
+            class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm font-semibold outline-none transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Cuota</label>
+          <div class="relative">
+            <span class="absolute left-4 top-2.5 text-blue-400 font-bold text-sm">&#64;</span>
+            <input type="number" [(ngModel)]="editingTip.odds" name="odds" step="0.01" required placeholder="1.85"
+              class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white pl-8 pr-4 py-2.5 text-sm font-mono outline-none transition-all">
+          </div>
+        </div>
+
+        <div class="md:col-span-3 flex justify-end space-x-3 pt-3 border-t border-white/5">
+          <button type="button" (click)="cancelForm()" class="bg-white/5 hover:bg-white/10 text-gray-300 font-semibold py-2.5 px-5 rounded-xl text-sm transition-all">Cancelar</button>
+          <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-blue-500/20 text-sm transition-all">
+            {{ isEditing ? 'Actualizar' : 'Guardar Tip' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  }
+
+  <!-- ══════ METRICAS DE EFECTIVIDAD ══════ -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <!-- Card 1: Win Rate -->
+    <div class="glass p-5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Efectividad Fijas</span>
+        <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm font-bold">🎯</span>
+      </div>
+      <div class="mt-3">
+        <div class="text-3xl font-extrabold text-white" style="font-family:'Space Grotesk',sans-serif">
+          {{ winRate }}%
+        </div>
+        <p class="text-xs text-gray-400 mt-1 flex items-center space-x-1">
+          <span>{{ winRateDetail }}</span>
+        </p>
+      </div>
+      <div class="mt-3 w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" [style.width.%]="winRate"></div>
+      </div>
+    </div>
+
+    <!-- Card 2: Rendimiento / Profit Teórico (1u) -->
+    <div class="glass p-5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/30 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Yield Teórico (1u)</span>
+        <span class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-sm font-bold">📈</span>
+      </div>
+      <div class="mt-3">
+        <div class="text-3xl font-extrabold" [ngClass]="theoreticalYield >= 0 ? 'text-gradient-emerald' : 'text-red-400'" style="font-family:'Space Grotesk',sans-serif">
+          {{ theoreticalYield >= 0 ? '+' : '' }}{{ theoreticalYield }}%
+        </div>
+        <p class="text-xs text-gray-400 mt-1">
+          Profit: <span class="font-bold" [ngClass]="theoreticalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'">{{ theoreticalProfit >= 0 ? '+' : '' }}{{ theoreticalProfit }}u</span> (apuesta 1u)
+        </p>
+      </div>
+      <div class="mt-3 text-[11px] text-gray-500">
+        Calculado sobre {{ validOddsCount }} recomendaciones con cuota (fijas + Bet Builders)
+      </div>
+    </div>
+
+    <!-- Card 3: Cuota Promedio -->
+    <div class="glass p-5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden group hover:border-amber-500/30 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cuota Promedio</span>
+        <span class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm font-bold">⚡</span>
+      </div>
+      <div class="mt-3">
+        <div class="text-3xl font-extrabold text-gradient-amber" style="font-family:'Space Grotesk',sans-serif">
+          &#64; {{ avgOdds }}
+        </div>
+        <p class="text-xs text-gray-400 mt-1">
+          Promedio sobre {{ validOddsCount }} recomendaciones con cuota
+        </p>
+      </div>
+      <div class="mt-3 text-[11px] text-gray-500">
+        {{ totalTipsCount }} recomendaciones totales
+      </div>
+    </div>
+
+    <!-- Card 4: Desglose de Estados -->
+    <div class="glass p-5 rounded-2xl border border-white/5 flex flex-col justify-between relative overflow-hidden group hover:border-purple-500/30 transition-all">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Desglose Fijas</span>
+        <span class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-sm font-bold">📊</span>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-2">
+        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2 text-center">
+          <span class="text-xs font-bold text-emerald-400 block">{{ wonCount }}</span>
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Ganadas</span>
+        </div>
+        <div class="bg-red-500/10 border border-red-500/20 rounded-lg p-2 text-center">
+          <span class="text-xs font-bold text-red-400 block">{{ lostCount }}</span>
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Perdidas</span>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-lg p-2 text-center">
+          <span class="text-xs font-bold text-gray-300 block">{{ pendingCount }}</span>
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Pendientes</span>
+        </div>
+        <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 text-center">
+          <span class="text-xs font-bold text-blue-400 block">{{ nullCount }}</span>
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Nulas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ TABLA CON FILTROS ══════ -->
+  <div class="glass rounded-2xl border border-white/5 overflow-hidden">
+
+    <!-- Search + Filters bar -->
+    <div class="px-5 py-3.5 border-b border-white/5 flex flex-col md:flex-row gap-3 items-start md:items-center">
+      <!-- Buscador -->
+      <div class="relative flex-1 min-w-0">
+        <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" [(ngModel)]="searchText" placeholder="Buscar evento, pick, mercado, canal..."
+          class="w-full bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white text-sm pl-9 pr-4 py-2 outline-none transition-all placeholder-gray-600">
+      </div>
+
+      <!-- Filtro por Canal -->
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <span class="text-xs text-gray-600 font-medium">Canal:</span>
+        <select [(ngModel)]="selectedChannelFilter"
+          class="bg-white/5 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white text-xs px-3 py-1.5 outline-none transition-all">
+          <option value="ALL">Todos los canales</option>
+          <option value="PERSONAL">📡 Personal / Sin Canal</option>
+          @for (ch of channels; track ch.id) {
+            <option [value]="ch.id">{{ ch.name }} ({{ ch.type }})</option>
+          }
+        </select>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <span class="text-xs text-gray-600 font-medium">Estado:</span>
+        @for (f of [{label:'Todos', value:'ALL'},{label:'✓ Ganadas',value:'GANADA'},{label:'✗ Perdidas',value:'PERDIDA'},{label:'⏳ Pendientes',value:'PENDIENTE'}]; track f.value) {
+          <button (click)="filterResult = f.value"
+            class="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all"
+            [ngClass]="{
+              'bg-white/10 border-white/20 text-white': filterResult === f.value,
+              'bg-transparent border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10': filterResult !== f.value
+            }">{{ f.label }}</button>
+        }
+      </div>
+
+      <!-- Count -->
+      <div class="text-xs text-gray-600 flex-shrink-0">
+        {{ filteredItems.length }} de {{ allItems.length }}
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full">
+        <thead>
+          <tr class="border-b border-white/5">
+            <th class="px-5 py-3 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Fecha</th>
+            <th class="px-5 py-3 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Evento</th>
+            <th class="px-5 py-3 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Mercado / Pick</th>
+            <th class="px-5 py-3 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Cuota</th>
+            <th class="px-5 py-3 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Canal</th>
+            <th class="px-5 py-3 text-left text-[11px] font-bold text-gray-500 uppercase tracking-widest">Estado</th>
+            <th class="px-5 py-3 text-right text-[11px] font-bold text-gray-500 uppercase tracking-widest">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/[0.04]">
+          @for (item of filteredItems; track item.id) {
+            <tr class="hover:bg-white/[0.02] transition-colors group">
+              <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{{ item.date }}</td>
+              <td class="px-5 py-4 text-sm text-gray-200 max-w-[220px]">
+                <p class="truncate font-medium">{{ item.event }}</p>
+                @if (item.type === 'BET_BUILDER') {
+                  <span class="inline-block mt-0.5 px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold rounded-md">
+                    Bet Builder ({{ item.picks?.length }} picks)
+                  </span>
+                }
+              </td>
+              <td class="px-5 py-4 text-sm">
+                @if (item.type === 'TIP') {
+                  <div class="text-xs text-gray-500 mb-0.5">{{ item.market }}</div>
+                  <div class="font-bold text-white">{{ item.pick }}</div>
+                } @else if (item.type === 'BET_BUILDER' && item.picks) {
+                  <div class="space-y-1">
+                    @for (p of item.picks; track $index) {
+                      <div class="text-xs flex items-center space-x-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                        <span class="text-gray-400">{{ p.market }}:</span>
+                        <span class="font-semibold text-white">{{ p.pick }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap">
+                @if (hasValidOdds(item)) {
+                  <span class="text-sm font-extrabold text-gradient-amber">&#64; {{ item.odds }}</span>
+                } @else {
+                  <span class="px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold rounded-lg" title="Selección perteneciente a un Bet Builder">Bet Builder</span>
+                }
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap">
+                @if (item.channel) {
+                  <span class="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/15 text-indigo-300 rounded-lg text-xs font-semibold">
+                    {{ item.channel.name }}
+                  </span>
+                } @else {
+                  <span class="px-2.5 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-lg text-xs font-semibold">
+                    📡 Personal
+                  </span>
+                }
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap">
+                <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider border"
+                  [ngClass]="{
+                    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': item.result === 'GANADA',
+                    'bg-red-500/10 text-red-400 border-red-500/20': item.result === 'PERDIDA',
+                    'bg-slate-700 text-gray-400 border-slate-600': item.result === 'PENDIENTE',
+                    'bg-gray-500/10 text-gray-400 border-gray-500/20': item.result === 'NULA'
+                  }">{{ item.result }}</span>
+              </td>
+              <td class="px-5 py-4 whitespace-nowrap text-right">
+                <div class="flex justify-end items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  @if (item.type === 'TIP' && item.tip) {
+                    <button (click)="editTip(item)"
+                      class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 flex items-center justify-center transition-all text-xs" title="Editar">✏️</button>
+                    <button (click)="deleteItem(item)"
+                      class="w-7 h-7 rounded-lg bg-white/5 text-gray-400 hover:bg-red-500 hover:text-white border border-white/10 hover:border-red-500 flex items-center justify-center transition-all text-xs" title="Eliminar">🗑️</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="px-6 py-14 text-center">
+                <div class="flex flex-col items-center">
+                  <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                  </div>
+                  <p class="text-sm text-gray-500 font-medium">No se encontraron resultados</p>
+                  <p class="text-xs text-gray-600 mt-1">{{ searchText ? 'Prueba con otra búsqueda' : 'Agrega tu primer tip a la base maestra' }}</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,523 @@
+<div class="space-y-6 animate-fade-in-up">
+
+  <!-- ══════ PAGE HEADER & CONTROL BAR ══════ -->
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-3xl border border-white/10">
+    <div>
+      <h2 class="text-2xl font-bold text-white flex items-center gap-2" style="font-family:'Space Grotesk',sans-serif">
+        <span>Dashboard</span>
+        @if (activeMode === 'tipster') {
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold">🎯 Tipster Stats</span>
+        } @else {
+          <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">👤 Mis Apuestas</span>
+        }
+      </h2>
+      <p class="text-xs text-gray-400 mt-0.5">
+        {{ activeMode === 'tipster' ? 'Métricas de rendimiento original enviadas por el tipster' : 'Resumen de tu actividad personal, banca y apuestas rearmadas' }}
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Mode Tabs -->
+      <div class="bg-slate-800/90 p-1 rounded-2xl border border-white/10 flex items-center space-x-1 shadow-inner">
+        <button (click)="setMode('mine')" 
+          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+          [ngClass]="activeMode === 'mine' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md' : 'text-gray-400 hover:text-white'">
+          <span>👤 Mis Apuestas</span>
+        </button>
+
+        <button (click)="setMode('tipster')" 
+          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+          [ngClass]="activeMode === 'tipster' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' : 'text-gray-400 hover:text-white'">
+          <span>🎯 Apuestas Tipster</span>
+        </button>
+      </div>
+
+      <!-- Channel Filter Dropdown -->
+      <div class="relative">
+        <select [ngModel]="selectedChannelId" (ngModelChange)="setChannelFilter($event ? Number($event) : null)"
+          class="bg-slate-800 border border-white/10 text-gray-200 text-xs font-semibold px-3 py-2 rounded-2xl outline-none focus:border-emerald-500 transition-all cursor-pointer">
+          <option [ngValue]="null">🌐 Todos los Canales</option>
+          @for (c of channels; track c.id) {
+            <option [ngValue]="c.id">📡 {{ c.name }} ({{ c.type }})</option>
+          }
+        </select>
+      </div>
+
+      <a routerLink="/tickets/mine"
+        class="flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-semibold text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/20 transition-all">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <span>Nuevo Ticket</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ══════ BANKROLL BANNER (SOLO MIS APUESTAS) ══════ -->
+  @if (!isLoading && activeMode === 'mine') {
+  <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-6 border border-white/10 shadow-2xl relative overflow-hidden">
+    <div class="absolute -top-20 -right-20 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-white/10 pb-4 relative z-10">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg shadow-inner">
+          🏦
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span>Gestión de Banca (Bankroll)</span>
+          </h3>
+          <p class="text-xs text-gray-400">Controla tu capital inicial, fondos disponibles y movimientos de dinero.</p>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center space-x-2 flex-wrap gap-y-2">
+        <button (click)="openInitialModal()" 
+          class="flex items-center space-x-1.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold px-3 py-2 rounded-xl border border-white/10 transition-all cursor-pointer">
+          <span>⚙️ Banca Inicial</span>
+        </button>
+
+        <button (click)="openTransactionModal('DEPOSIT')" 
+          class="flex items-center space-x-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-3 py-2 rounded-xl border border-emerald-500/20 transition-all cursor-pointer">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>+ Depósito</span>
+        </button>
+
+        <button (click)="openTransactionModal('WITHDRAWAL')" 
+          class="flex items-center space-x-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold px-3 py-2 rounded-xl border border-red-500/20 transition-all cursor-pointer">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+          <span>- Retiro</span>
+        </button>
+
+        <button (click)="openHistoryModal()" 
+          class="flex items-center space-x-1.5 bg-slate-700/50 hover:bg-slate-700 text-gray-300 text-xs font-semibold px-3 py-2 rounded-xl border border-white/5 transition-all cursor-pointer">
+          <span>📋 Movimientos ({{ movementsCount }})</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bankroll Stats Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+      
+      <!-- Banca Actual -->
+      <div class="bg-slate-800/80 p-4 rounded-2xl border border-emerald-500/20 relative overflow-hidden">
+        <div class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1">Banca Actual</div>
+        <div class="text-2xl lg:text-3xl font-extrabold text-white">
+          ${{ currentBankroll.toFixed(2) }}
+        </div>
+        <div class="mt-1 text-[10px] text-gray-400">Capital total estimado</div>
+      </div>
+
+      <!-- Banca Disponible -->
+      <div class="bg-slate-800/80 p-4 rounded-2xl border border-blue-500/20 relative overflow-hidden">
+        <div class="text-[11px] font-semibold text-blue-400 uppercase tracking-wider mb-1">Banca Disponible</div>
+        <div class="text-2xl lg:text-3xl font-extrabold text-blue-300">
+          ${{ availableBankroll.toFixed(2) }}
+        </div>
+        <div class="mt-1 text-[10px] text-gray-400">Libre pos-apuestas pendientes</div>
+      </div>
+
+      <!-- Crecimiento de Banca -->
+      <div class="bg-slate-800/80 p-4 rounded-2xl border border-purple-500/20 relative overflow-hidden">
+        <div class="text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-1">Crecimiento Banca</div>
+        <div class="text-2xl lg:text-3xl font-extrabold" [ngClass]="bankrollGrowthPct >= 0 ? 'text-purple-300' : 'text-red-400'">
+          {{ bankrollGrowthPct >= 0 ? '+' : '' }}{{ bankrollGrowthPct }}%
+        </div>
+        <div class="mt-1 text-[10px] text-gray-400">Sobre capital neto inyectado</div>
+      </div>
+
+      <!-- Capital Neto Inyectado -->
+      <div class="bg-slate-800/80 p-4 rounded-2xl border border-white/10 relative overflow-hidden">
+        <div class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Capital Neto Inyectado</div>
+        <div class="text-xl lg:text-2xl font-bold text-gray-200">
+          ${{ netCapitalInjected.toFixed(2) }}
+        </div>
+        <div class="mt-1 text-[10px] text-gray-400 flex items-center justify-between">
+          <span>Inc. ${{ initialBalance.toFixed(2) }}</span>
+          <span>Dep. +${{ totalDeposits.toFixed(2) }} | Ret. -${{ totalWithdrawals.toFixed(2) }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  }
+
+  <!-- ══════ TIPSTER PERFORMANCE BANNER (SOLO MODALIDAD TIPSTER) ══════ -->
+  @if (!isLoading && activeMode === 'tipster') {
+  <div class="bg-gradient-to-r from-purple-950/80 via-slate-900 to-indigo-950/80 rounded-3xl p-6 border border-purple-500/20 shadow-2xl relative overflow-hidden">
+    <div class="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"></div>
+    <div class="flex items-center space-x-4">
+      <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 text-xl shadow-inner">
+        🎯
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <span>Análisis de Apuestas de Tipsters</span>
+          @if (selectedChannelId) {
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">Filtro activo</span>
+          }
+        </h3>
+        <p class="text-xs text-gray-300 mt-0.5">
+          Visualizando el comportamiento global de las apuestas tal cual fueron publicadas por los canales de tipsters.
+        </p>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- ══════ LOADING ══════ -->
+  @if (isLoading) {
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="glass rounded-2xl p-5 h-28 animate-pulse">
+          <div class="h-3 w-20 bg-white/5 rounded mb-3"></div>
+          <div class="h-8 w-24 bg-white/5 rounded"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══════ KPI CARDS ══════ -->
+  @if (!isLoading) {
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
+
+    <!-- Ganancia Total -->
+    <div class="glass rounded-2xl p-5 border border-white/5 hover:border-emerald-500/20 transition-all hover:-translate-y-0.5 group animate-fade-in-up relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+      <div class="flex items-start justify-between mb-3">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Ganancia Total</p>
+        <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        </div>
+      </div>
+      <div class="text-3xl font-extrabold" [ngClass]="profitPositive ? 'text-gradient-emerald' : 'text-red-400'">
+        {{ profitPositive ? '+' : '' }}{{ totalProfit.toFixed(2) }}
+      </div>
+      <div class="mt-1 text-[11px]" [ngClass]="profitPositive ? 'text-emerald-500' : 'text-red-500'">
+        {{ tickets.length }} tickets totales
+      </div>
+    </div>
+
+    <!-- Win Rate -->
+    <div class="glass rounded-2xl p-5 border border-white/5 hover:border-blue-500/20 transition-all hover:-translate-y-0.5 group animate-fade-in-up relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+      <div class="flex items-start justify-between mb-3">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Win Rate</p>
+        <div class="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+      </div>
+      <div class="text-3xl font-extrabold text-gradient-blue">{{ winRate }}%</div>
+      <div class="mt-1 text-[11px] text-blue-500">{{ winRateDetail }}</div>
+    </div>
+
+    <!-- Yield / ROI -->
+    <div class="glass rounded-2xl p-5 border border-white/5 hover:border-amber-500/20 transition-all hover:-translate-y-0.5 group animate-fade-in-up relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+      <div class="flex items-start justify-between mb-3">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Yield / ROI</p>
+        <div class="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+      <div class="text-3xl font-extrabold text-gradient-amber">{{ yield >= 0 ? '+' : '' }}{{ yield }}%</div>
+      <div class="mt-1 text-[11px] text-amber-500">Retorno sobre inversión</div>
+    </div>
+
+    <!-- Pendientes -->
+    <div class="glass rounded-2xl p-5 border border-white/5 hover:border-purple-500/20 transition-all hover:-translate-y-0.5 group animate-fade-in-up relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+      <div class="flex items-start justify-between mb-3">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Pendientes</p>
+        <div class="w-7 h-7 rounded-lg bg-purple-500/10 flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+      <div class="text-3xl font-extrabold text-gradient-purple">{{ pendingTickets.length }}</div>
+      <div class="mt-1 text-[11px] text-purple-500">Invertido: ${{ totalInvested.toFixed(2) }}</div>
+    </div>
+
+  </div>
+
+  <!-- ══════ RECIENTES + DISTRIBUCIÓN ══════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mt-2">
+
+    <!-- Últimos tickets -->
+    <div class="lg:col-span-3 glass rounded-2xl border border-white/5 overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-white">Últimas apuestas</h3>
+        <a routerLink="/tickets/mine" class="text-xs text-gray-500 hover:text-emerald-400 transition-colors">Ver todas →</a>
+      </div>
+
+      @if (recentTickets.length === 0) {
+        <div class="flex flex-col items-center justify-center py-12 text-center px-6">
+          <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+          </div>
+          <p class="text-sm text-gray-500">No hay tickets registrados aún.</p>
+          <a routerLink="/tickets/mine" class="mt-3 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">Crear primer ticket →</a>
+        </div>
+      }
+
+      <div class="divide-y divide-white/5">
+        @for (ticket of recentTickets; track ticket.id) {
+          <div class="px-5 py-3.5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+            <div class="flex items-center space-x-3 min-w-0">
+              <!-- Type badge -->
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border whitespace-nowrap flex-shrink-0"
+                [ngClass]="{
+                  'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': ticket.type === 'Simple',
+                  'bg-amber-500/10 text-amber-400 border-amber-500/20': ticket.type === 'Combinada',
+                  'bg-purple-500/10 text-purple-400 border-purple-500/20': ticket.type === 'Bet Builder Puro',
+                  'bg-blue-500/10 text-blue-400 border-blue-500/20': ticket.type === 'Mixta'
+                }">{{ ticket.type }}</span>
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-white truncate">{{ ticket.bookmaker }}</p>
+                <p class="text-xs text-gray-500">{{ ticket.date }} · &#64; {{ ticket.totalOdds }}</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-4 flex-shrink-0 ml-4">
+              <span class="text-sm font-bold" [ngClass]="{
+                'text-emerald-400': ticket.result === 'GANADA',
+                'text-red-400': ticket.result === 'PERDIDA',
+                'text-amber-400': ticket.result === 'CASHOUT',
+                'text-gray-500': ticket.result === 'PENDIENTE'
+              }">{{ (ticket.profit !== null && ticket.profit !== undefined) ? ((Number(ticket.profit) >= 0 ? '+' : '') + Number(ticket.profit).toFixed(2)) : '—' }}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border"
+                [ngClass]="{
+                  'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': ticket.result === 'GANADA',
+                  'bg-red-500/10 text-red-400 border-red-500/20': ticket.result === 'PERDIDA',
+                  'bg-amber-500/10 text-amber-400 border-amber-500/20': ticket.result === 'CASHOUT',
+                  'bg-slate-700 text-gray-400 border-slate-600': ticket.result === 'PENDIENTE'
+                }">{{ ticket.result }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Distribución de resultados -->
+    <div class="lg:col-span-2 glass rounded-2xl border border-white/5 p-5">
+      <h3 class="text-sm font-semibold text-white mb-4">Distribución</h3>
+
+      @if (tickets.length === 0) {
+        <div class="flex flex-col items-center justify-center h-40 text-center">
+          <svg class="w-8 h-8 text-gray-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+          <p class="text-xs text-gray-600">Sin datos</p>
+        </div>
+      }
+
+      @if (tickets.length > 0) {
+        <div class="space-y-3">
+          <!-- Ganadas -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400 font-medium">Ganadas</span>
+              <span class="text-emerald-400 font-bold">{{ tickets | countResult:'GANADA' }}</span>
+            </div>
+            <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
+                [style.width.%]="tickets.length > 0 ? ((tickets | countResult:'GANADA') / tickets.length * 100) : 0"></div>
+            </div>
+          </div>
+          <!-- Perdidas -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400 font-medium">Perdidas</span>
+              <span class="text-red-400 font-bold">{{ tickets | countResult:'PERDIDA' }}</span>
+            </div>
+            <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all duration-700"
+                [style.width.%]="tickets.length > 0 ? ((tickets | countResult:'PERDIDA') / tickets.length * 100) : 0"></div>
+            </div>
+          </div>
+          <!-- Pendientes -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400 font-medium">Pendientes</span>
+              <span class="text-amber-400 font-bold">{{ tickets | countResult:'PENDIENTE' }}</span>
+            </div>
+            <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-700"
+                [style.width.%]="tickets.length > 0 ? ((tickets | countResult:'PENDIENTE') / tickets.length * 100) : 0"></div>
+            </div>
+          </div>
+          <!-- Cashout -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-400 font-medium">Cashout</span>
+              <span class="text-blue-400 font-bold">{{ tickets | countResult:'CASHOUT' }}</span>
+            </div>
+            <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700"
+                [style.width.%]="tickets.length > 0 ? ((tickets | countResult:'CASHOUT') / tickets.length * 100) : 0"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="mt-5 pt-4 border-t border-white/5 flex justify-between text-xs">
+          <span class="text-gray-500">Total registrados</span>
+          <span class="font-bold text-white">{{ tickets.length }}</span>
+        </div>
+      }
+    </div>
+  </div>
+  }
+
+</div>
+
+<!-- ══════ MODAL BANCA INICIAL ══════ -->
+@if (showInitialModal) {
+<div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" (click)="closeInitialModal()">
+  <div class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[400px] p-6 animate-scale-in" (click)="$event.stopPropagation()">
+    <div class="flex justify-between items-center mb-5 pb-3 border-b border-white/10">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <span>⚙️ Configurar Banca Inicial</span>
+      </h3>
+      <button (click)="closeInitialModal()" class="text-gray-400 hover:text-white text-sm font-bold">✕</button>
+    </div>
+    
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Monto de Banca Inicial ($)</label>
+        <input type="number" step="0.01" [(ngModel)]="inputInitialBalance" placeholder="Ej. 1000.00"
+          class="w-full bg-slate-800 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-3 text-lg font-bold outline-none transition-all">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Fecha de Inicio de Banca</label>
+        <input type="date" [(ngModel)]="inputStartDate"
+          class="w-full bg-slate-800 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+      </div>
+
+      <p class="text-xs text-gray-500 leading-relaxed">
+        Ingresa el dinero y la fecha con la que iniciaste tus apuestas para llevar el historial y crecimiento de tu capital.
+      </p>
+    </div>
+
+    <div class="mt-6 flex space-x-3 justify-end">
+      <button (click)="closeInitialModal()" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold">Cancelar</button>
+      <button (click)="saveInitialBalance()" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold shadow-lg shadow-emerald-500/20">Guardar</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ══════ MODAL NUEVO MOVIMIENTO (DEPÓSITO / RETIRO) ══════ -->
+@if (showTransactionModal) {
+<div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" (click)="closeTransactionModal()">
+  <div class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[420px] p-6 animate-scale-in" (click)="$event.stopPropagation()">
+    <div class="flex justify-between items-center mb-5 pb-3 border-b border-white/10">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <span>{{ transactionForm.type === 'DEPOSIT' ? '➕ Registrar Depósito' : '➖ Registrar Retiro' }}</span>
+      </h3>
+      <button (click)="closeTransactionModal()" class="text-gray-400 hover:text-white text-sm font-bold">✕</button>
+    </div>
+    
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Monto ($)</label>
+        <input type="number" step="0.01" [(ngModel)]="transactionForm.amount" placeholder="Ej. 100.00"
+          class="w-full bg-slate-800 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-3 text-lg font-bold outline-none transition-all">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Fecha</label>
+        <input type="date" [(ngModel)]="transactionForm.date"
+          class="w-full bg-slate-800 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Descripción (Opcional)</label>
+        <input type="text" [(ngModel)]="transactionForm.description" placeholder="Ej. Inyección de capital mensual / Retiro de ganancias"
+          class="w-full bg-slate-800 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+      </div>
+    </div>
+
+    <div class="mt-6 flex space-x-3 justify-end">
+      <button (click)="closeTransactionModal()" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold">Cancelar</button>
+      <button (click)="saveTransaction()" 
+        class="px-5 py-2 rounded-xl text-white text-xs font-bold shadow-lg transition-all"
+        [ngClass]="transactionForm.type === 'DEPOSIT' ? 'bg-emerald-500 hover:bg-emerald-400 shadow-emerald-500/20' : 'bg-red-500 hover:bg-red-400 shadow-red-500/20'">
+        Guardar {{ transactionForm.type === 'DEPOSIT' ? 'Depósito' : 'Retiro' }}
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ══════ MODAL HISTORIAL DE MOVIMIENTOS ══════ -->
+@if (showHistoryModal) {
+<div class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" (click)="closeHistoryModal()">
+  <div class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl w-[520px] max-w-full p-6 animate-scale-in" (click)="$event.stopPropagation()">
+    <div class="flex justify-between items-center mb-5 pb-3 border-b border-white/10">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <span>📋 Historial de Movimientos de Banca</span>
+      </h3>
+      <button (click)="closeHistoryModal()" class="text-gray-400 hover:text-white text-sm font-bold">✕</button>
+    </div>
+
+    @if (allMovements.length === 0) {
+      <div class="text-center py-10 text-gray-500 text-sm">
+        No se han registrado movimientos de banca aún.
+      </div>
+    } @else {
+      <div class="max-h-72 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+        @for (m of allMovements; track $index) {
+          @if (m.isInitial) {
+            <div class="bg-slate-800/90 p-3 rounded-xl border border-emerald-500/30 flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  🏦
+                </span>
+                <div>
+                  <div class="text-xs font-bold text-white flex items-center gap-2">
+                    <span>Banca Inicial</span>
+                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-mono">{{ m.date }}</span>
+                  </div>
+                  <div class="text-[11px] text-gray-400">{{ m.description }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <span class="text-sm font-extrabold text-emerald-400">
+                  +${{ Number(m.amount).toFixed(2) }}
+                </span>
+                <button (click)="closeHistoryModal(); openInitialModal()" class="text-xs text-gray-400 hover:text-emerald-400 px-2 py-1 transition-colors">⚙️ Editar</button>
+              </div>
+            </div>
+          } @else {
+            <div class="bg-slate-800/60 p-3 rounded-xl border border-white/5 flex items-center justify-between hover:bg-slate-800 transition-colors">
+              <div class="flex items-center space-x-3">
+                <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border"
+                  [ngClass]="m.type === 'DEPOSIT' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'">
+                  {{ m.type === 'DEPOSIT' ? '+' : '-' }}
+                </span>
+                <div>
+                  <div class="text-xs font-bold text-white flex items-center gap-2">
+                    <span>{{ m.type === 'DEPOSIT' ? 'Depósito' : 'Retiro' }}</span>
+                    <span class="text-[10px] text-gray-500 font-normal">{{ m.date }}</span>
+                  </div>
+                  <div class="text-[11px] text-gray-400">{{ m.description || 'Sin descripción' }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <span class="text-sm font-extrabold" [ngClass]="m.type === 'DEPOSIT' ? 'text-emerald-400' : 'text-red-400'">
+                  {{ m.type === 'DEPOSIT' ? '+' : '-' }}${{ Number(m.amount).toFixed(2) }}
+                </span>
+                <button (click)="deleteTransaction(m.id)" class="text-gray-500 hover:text-red-400 text-xs px-2 py-1 transition-colors" title="Eliminar">✕</button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+
+    <div class="mt-6 flex justify-end">
+      <button (click)="closeHistoryModal()" class="px-5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold">Cerrar</button>
+    </div>
+  </div>
+</div>
+}
