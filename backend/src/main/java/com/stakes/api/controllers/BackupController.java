@@ -1,5 +1,7 @@
 package com.stakes.api.controllers;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stakes.api.models.*;
 import com.stakes.api.repositories.*;
 import lombok.Data;
@@ -12,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -24,39 +28,26 @@ public class BackupController {
 
     private static final Logger log = LoggerFactory.getLogger(BackupController.class);
 
-    @Autowired
-    private BankrollRepository bankrollRepository;
+    @Autowired private BankrollRepository bankrollRepository;
+    @Autowired private BankrollTransactionRepository bankrollTransactionRepository;
+    @Autowired private ChannelRepository channelRepository;
+    @Autowired private ChannelSubgroupRepository channelSubgroupRepository;
+    @Autowired private TipRepository tipRepository;
+    @Autowired private TicketRepository ticketRepository;
+    @Autowired private TicketSelectionRepository ticketSelectionRepository;
+    @Autowired private BetBuilderRepository betBuilderRepository;
+    @Autowired private ObjectMapper objectMapper;
 
-    @Autowired
-    private BankrollTransactionRepository bankrollTransactionRepository;
-
-    @Autowired
-    private ChannelRepository channelRepository;
-
-    @Autowired
-    private ChannelSubgroupRepository channelSubgroupRepository;
-
-    @Autowired
-    private TipRepository tipRepository;
-
-    @Autowired
-    private TicketRepository ticketRepository;
-
-    @Autowired
-    private TicketSelectionRepository ticketSelectionRepository;
-
-    // ─── DTOs for backup (avoid @JsonIgnore issues) ────────────────────────────
+    // ─── DTOs for export ───────────────────────────────────────────────────────
 
     @Data
     public static class BackupSelectionDto {
-        private Long id;
-        private Long tipId;      // reference by ID only
+        private Long tipId;
         private String result;
     }
 
     @Data
     public static class BackupBetBuilderDto {
-        private Long id;
         private java.math.BigDecimal expectedOdds;
         private java.math.BigDecimal realOdds;
         private List<BackupSelectionDto> selections = new ArrayList<>();
@@ -64,7 +55,6 @@ public class BackupController {
 
     @Data
     public static class BackupTicketDto {
-        private Long id;
         private java.time.LocalDate date;
         private String type;
         private String bookmaker;
@@ -76,29 +66,15 @@ public class BackupController {
         private String result;
         private java.math.BigDecimal profit;
         private Boolean originalTipster;
-        private Long subgroupId;  // reference by ID only
+        private Long subgroupId;
         private List<BackupSelectionDto> selections = new ArrayList<>();
         private List<BackupBetBuilderDto> betBuilders = new ArrayList<>();
     }
 
     @Data
-    public static class BackupData {
-        private String exportedAt;
-        private List<Bankroll> bankrolls;
-        private List<BankrollTransaction> bankrollTransactions;
-        private List<Channel> channels;
-        private List<ChannelSubgroup> channelSubgroups;
-        private List<Tip> tips;
-        // Tickets are exported as full entities for backward-compat with old exports
-        // and as DTOs for new exports. We accept both.
-        private List<com.fasterxml.jackson.databind.JsonNode> tickets;
-    }
-
-    // ─── Export ────────────────────────────────────────────────────────────────
-
-    @Data
     public static class ExportData {
         private String exportedAt;
+        private String version = "2";
         private List<Bankroll> bankrolls;
         private List<BankrollTransaction> bankrollTransactions;
         private List<Channel> channels;
@@ -106,6 +82,8 @@ public class BackupController {
         private List<Tip> tips;
         private List<BackupTicketDto> tickets;
     }
+
+    // ─── Export ───────────────────────────────────────────────────────────────
 
     @GetMapping("/export")
     public ResponseEntity<ExportData> exportData() {
@@ -117,11 +95,9 @@ public class BackupController {
         backup.setChannelSubgroups(channelSubgroupRepository.findAll());
         backup.setTips(tipRepository.findAllByOrderByDateDescIdDesc());
 
-        // Convert tickets to DTOs to avoid circular refs / @JsonIgnore issues
         List<BackupTicketDto> ticketDtos = new ArrayList<>();
         for (Ticket t : ticketRepository.findAllByOrderByDateDescIdDesc()) {
             BackupTicketDto dto = new BackupTicketDto();
-            dto.setId(t.getId());
             dto.setDate(t.getDate());
             dto.setType(t.getType());
             dto.setBookmaker(t.getBookmaker());
@@ -137,7 +113,6 @@ public class BackupController {
             List<BackupSelectionDto> selDtos = new ArrayList<>();
             for (TicketSelection sel : t.getSelections()) {
                 BackupSelectionDto sdto = new BackupSelectionDto();
-                sdto.setId(sel.getId());
                 sdto.setTipId(sel.getTip() != null ? sel.getTip().getId() : null);
                 sdto.setResult(sel.getResult());
                 selDtos.add(sdto);
@@ -147,13 +122,11 @@ public class BackupController {
             List<BackupBetBuilderDto> bbDtos = new ArrayList<>();
             for (BetBuilder bb : t.getBetBuilders()) {
                 BackupBetBuilderDto bbDto = new BackupBetBuilderDto();
-                bbDto.setId(bb.getId());
                 bbDto.setExpectedOdds(bb.getExpectedOdds());
                 bbDto.setRealOdds(bb.getRealOdds());
                 List<BackupSelectionDto> bbSels = new ArrayList<>();
                 for (TicketSelection sel : bb.getSelections()) {
                     BackupSelectionDto sdto = new BackupSelectionDto();
-                    sdto.setId(sel.getId());
                     sdto.setTipId(sel.getTip() != null ? sel.getTip().getId() : null);
                     sdto.setResult(sel.getResult());
                     bbSels.add(sdto);
@@ -175,22 +148,28 @@ public class BackupController {
                 .body(backup);
     }
 
-    // ─── Import ────────────────────────────────────────────────────────────────
+    // ─── Import (accepts ANY format: v1 entity-based or v2 DTO-based) ─────────
 
+    /**
+     * Generic import that parses tickets from JsonNode to handle both:
+     * - Old format: tickets[].subgroup = { id, name, channel: {...} }
+     *               tickets[].selections[].tip = { id, channel: {...}, ... }
+     * - New format: tickets[].subgroupId = 5
+     *               tickets[].selections[].tipId = 3
+     */
     @Data
-    public static class ImportData {
-        private String exportedAt;
+    public static class RawImportData {
         private List<Bankroll> bankrolls;
         private List<BankrollTransaction> bankrollTransactions;
         private List<Channel> channels;
         private List<ChannelSubgroup> channelSubgroups;
         private List<Tip> tips;
-        private List<BackupTicketDto> tickets;
+        private List<JsonNode> tickets;
     }
 
     @PostMapping("/import")
     @Transactional
-    public ResponseEntity<?> importData(@RequestBody ImportData backup) {
+    public ResponseEntity<?> importData(@RequestBody RawImportData backup) {
         if (backup == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Datos de respaldo inválidos"));
         }
@@ -212,7 +191,7 @@ public class BackupController {
                 }
             }
 
-            // 3. Channels — map old ID → saved entity
+            // 3. Channels → map old ID → saved entity
             Map<Long, Channel> channelMap = new HashMap<>();
             if (backup.getChannels() != null) {
                 for (Channel ch : backup.getChannels()) {
@@ -220,11 +199,7 @@ public class BackupController {
                     ch.setId(null);
                     Channel saved;
                     Optional<Channel> existing = channelRepository.findByName(ch.getName());
-                    if (existing.isPresent()) {
-                        saved = existing.get();
-                    } else {
-                        saved = channelRepository.save(ch);
-                    }
+                    saved = existing.orElseGet(() -> channelRepository.save(ch));
                     if (oldId != null) channelMap.put(oldId, saved);
                 }
             }
@@ -240,7 +215,7 @@ public class BackupController {
                 return channelRepository.save(ch);
             };
 
-            // 3b. ChannelSubgroups — map old ID → saved entity
+            // 3b. ChannelSubgroups → map old ID → saved entity
             Map<Long, ChannelSubgroup> subgroupMap = new HashMap<>();
             if (backup.getChannelSubgroups() != null) {
                 for (ChannelSubgroup sg : backup.getChannelSubgroups()) {
@@ -252,7 +227,7 @@ public class BackupController {
                 }
             }
 
-            // 4. Tips — map old ID → saved entity
+            // 4. Tips → map old ID → saved entity
             Map<Long, Tip> tipMap = new HashMap<>();
             if (backup.getTips() != null) {
                 for (Tip tip : backup.getTips()) {
@@ -263,6 +238,12 @@ public class BackupController {
                         Long oldSgId = tip.getSubgroup().getId();
                         if (oldSgId != null && subgroupMap.containsKey(oldSgId)) {
                             tip.setSubgroup(subgroupMap.get(oldSgId));
+                        } else {
+                            // subgroup not in map, try to save it
+                            ChannelSubgroup sg = tip.getSubgroup();
+                            sg.setId(null);
+                            if (sg.getChannel() != null) sg.setChannel(resolveChannel.apply(sg.getChannel()));
+                            tip.setSubgroup(channelSubgroupRepository.save(sg));
                         }
                     }
                     Tip savedTip = tipRepository.save(tip);
@@ -270,65 +251,97 @@ public class BackupController {
                 }
             }
 
-            // 5. Tickets — save ticket first, then selections and bet_builders manually
+            // 5. Tickets — parse JsonNode to handle both old and new formats
             if (backup.getTickets() != null) {
-                for (BackupTicketDto dto : backup.getTickets()) {
+                for (JsonNode ticketNode : backup.getTickets()) {
                     Ticket ticket = new Ticket();
-                    ticket.setDate(dto.getDate());
-                    ticket.setType(dto.getType());
-                    ticket.setBookmaker(dto.getBookmaker());
-                    ticket.setStake(dto.getStake());
-                    ticket.setTotalOdds(dto.getTotalOdds());
-                    ticket.setIsCashout(dto.getIsCashout());
-                    ticket.setCashoutAmount(dto.getCashoutAmount());
-                    ticket.setResult(dto.getResult() != null ? dto.getResult() : "PENDIENTE");
-                    ticket.setProfit(dto.getProfit());
-                    ticket.setOriginalTipster(dto.getOriginalTipster());
+                    ticket.setDate(parseDate(ticketNode, "date"));
+                    ticket.setType(getString(ticketNode, "type"));
+                    ticket.setBookmaker(getString(ticketNode, "bookmaker"));
+                    ticket.setStake(getBigDecimal(ticketNode, "stake"));
+                    ticket.setTotalOdds(getBigDecimal(ticketNode, "totalOdds"));
+                    ticket.setIsCashout(getBoolean(ticketNode, "isCashout"));
+                    ticket.setCashoutAmount(getBigDecimal(ticketNode, "cashoutAmount"));
+                    String result = getString(ticketNode, "result");
+                    ticket.setResult(result != null ? result : "PENDIENTE");
+                    ticket.setProfit(getBigDecimal(ticketNode, "profit"));
+                    ticket.setOriginalTipster(getBoolean(ticketNode, "originalTipster"));
 
-                    // Resolve subgroup
-                    if (dto.getSubgroupId() != null && subgroupMap.containsKey(dto.getSubgroupId())) {
-                        ticket.setSubgroup(subgroupMap.get(dto.getSubgroupId()));
+                    // Resolve subgroup — supports both v1 (subgroup object) and v2 (subgroupId)
+                    ChannelSubgroup resolvedSubgroup = null;
+                    if (ticketNode.has("subgroupId") && !ticketNode.get("subgroupId").isNull()) {
+                        Long sgId = ticketNode.get("subgroupId").asLong();
+                        resolvedSubgroup = subgroupMap.get(sgId);
+                    } else if (ticketNode.has("subgroup") && !ticketNode.get("subgroup").isNull()) {
+                        JsonNode sgNode = ticketNode.get("subgroup");
+                        if (sgNode.has("id") && !sgNode.get("id").isNull()) {
+                            Long sgId = sgNode.get("id").asLong();
+                            resolvedSubgroup = subgroupMap.get(sgId);
+                        }
                     }
-
-                    // Save ticket first (without cascaded children)
+                    ticket.setSubgroup(resolvedSubgroup);
                     ticket.setSelections(new ArrayList<>());
                     ticket.setBetBuilders(new ArrayList<>());
+
+                    // Save ticket without children first
                     Ticket savedTicket = ticketRepository.save(ticket);
 
-                    // Save direct selections
-                    if (dto.getSelections() != null) {
-                        for (BackupSelectionDto sdto : dto.getSelections()) {
+                    // Parse and save direct selections
+                    if (ticketNode.has("selections") && ticketNode.get("selections").isArray()) {
+                        for (JsonNode selNode : ticketNode.get("selections")) {
                             TicketSelection sel = new TicketSelection();
                             sel.setTicket(savedTicket);
                             sel.setBetBuilder(null);
-                            sel.setResult(sdto.getResult() != null ? sdto.getResult() : "PENDIENTE");
-                            if (sdto.getTipId() != null && tipMap.containsKey(sdto.getTipId())) {
-                                sel.setTip(tipMap.get(sdto.getTipId()));
+                            String selResult = getString(selNode, "result");
+                            sel.setResult(selResult != null ? selResult : "PENDIENTE");
+
+                            // Resolve tip — supports v1 (tip object) and v2 (tipId)
+                            Tip resolvedTip = null;
+                            if (selNode.has("tipId") && !selNode.get("tipId").isNull()) {
+                                Long tipId = selNode.get("tipId").asLong();
+                                resolvedTip = tipMap.get(tipId);
+                            } else if (selNode.has("tip") && !selNode.get("tip").isNull()) {
+                                JsonNode tipNode = selNode.get("tip");
+                                if (tipNode.has("id") && !tipNode.get("id").isNull()) {
+                                    Long tipId = tipNode.get("id").asLong();
+                                    resolvedTip = tipMap.get(tipId);
+                                }
                             }
+                            sel.setTip(resolvedTip);
                             ticketSelectionRepository.save(sel);
                         }
                     }
 
-                    // Save bet builders and their selections
-                    if (dto.getBetBuilders() != null) {
-                        BetBuilderRepository bbRepo = betBuilderRepository;
-                        for (BackupBetBuilderDto bbDto : dto.getBetBuilders()) {
+                    // Parse and save bet builders + their selections
+                    if (ticketNode.has("betBuilders") && ticketNode.get("betBuilders").isArray()) {
+                        for (JsonNode bbNode : ticketNode.get("betBuilders")) {
                             BetBuilder bb = new BetBuilder();
                             bb.setTicket(savedTicket);
-                            bb.setExpectedOdds(bbDto.getExpectedOdds());
-                            bb.setRealOdds(bbDto.getRealOdds());
+                            bb.setExpectedOdds(getBigDecimal(bbNode, "expectedOdds"));
+                            bb.setRealOdds(getBigDecimal(bbNode, "realOdds"));
                             bb.setSelections(new ArrayList<>());
-                            BetBuilder savedBb = bbRepo.save(bb);
+                            BetBuilder savedBb = betBuilderRepository.save(bb);
 
-                            if (bbDto.getSelections() != null) {
-                                for (BackupSelectionDto sdto : bbDto.getSelections()) {
+                            if (bbNode.has("selections") && bbNode.get("selections").isArray()) {
+                                for (JsonNode selNode : bbNode.get("selections")) {
                                     TicketSelection sel = new TicketSelection();
                                     sel.setTicket(savedTicket);
                                     sel.setBetBuilder(savedBb);
-                                    sel.setResult(sdto.getResult() != null ? sdto.getResult() : "PENDIENTE");
-                                    if (sdto.getTipId() != null && tipMap.containsKey(sdto.getTipId())) {
-                                        sel.setTip(tipMap.get(sdto.getTipId()));
+                                    String selResult = getString(selNode, "result");
+                                    sel.setResult(selResult != null ? selResult : "PENDIENTE");
+
+                                    Tip resolvedTip = null;
+                                    if (selNode.has("tipId") && !selNode.get("tipId").isNull()) {
+                                        Long tipId = selNode.get("tipId").asLong();
+                                        resolvedTip = tipMap.get(tipId);
+                                    } else if (selNode.has("tip") && !selNode.get("tip").isNull()) {
+                                        JsonNode tipNode = selNode.get("tip");
+                                        if (tipNode.has("id") && !tipNode.get("id").isNull()) {
+                                            Long tipId = tipNode.get("id").asLong();
+                                            resolvedTip = tipMap.get(tipId);
+                                        }
                                     }
+                                    sel.setTip(resolvedTip);
                                     ticketSelectionRepository.save(sel);
                                 }
                             }
@@ -342,10 +355,29 @@ public class BackupController {
         } catch (Throwable ex) {
             log.error("Error crítico importando respaldo JSON: ", ex);
             String detail = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
-            return ResponseEntity.status(500).body(Map.of("message", "Error al importar respaldo: " + (detail != null ? detail : ex.toString())));
+            return ResponseEntity.status(500).body(Map.of("message", "Error al importar: " + (detail != null ? detail : ex.toString())));
         }
     }
 
-    @Autowired
-    private BetBuilderRepository betBuilderRepository;
+    // ─── Helpers for JsonNode parsing ─────────────────────────────────────────
+
+    private String getString(JsonNode node, String field) {
+        return (node.has(field) && !node.get(field).isNull()) ? node.get(field).asText() : null;
+    }
+
+    private Boolean getBoolean(JsonNode node, String field) {
+        if (!node.has(field) || node.get(field).isNull()) return null;
+        return node.get(field).asBoolean();
+    }
+
+    private BigDecimal getBigDecimal(JsonNode node, String field) {
+        if (!node.has(field) || node.get(field).isNull()) return null;
+        try { return new BigDecimal(node.get(field).asText()); } catch (Exception e) { return null; }
+    }
+
+    private LocalDate parseDate(JsonNode node, String field) {
+        String val = getString(node, field);
+        if (val == null) return null;
+        try { return LocalDate.parse(val); } catch (Exception e) { return null; }
+    }
 }
