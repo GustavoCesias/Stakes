@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin, Observable } from 'rxjs';
 import { TipService, Tip } from '../../services/tip.service';
 import { ChannelService, Channel, ChannelSubgroup } from '../../services/channel.service';
 import { TicketService, Ticket, BetBuilder } from '../../services/ticket.service';
@@ -549,14 +550,21 @@ export class TipPoolComponent implements OnInit {
   }
 
   deleteItem(item: BaseMaestraItem) {
-    if (item.type === 'TIP' && item.tip?.id) {
-      if (confirm('¿Estás seguro de que deseas eliminar esta recomendación?')) {
-        this.tipService.deleteTip(item.tip.id).subscribe({
+    if (confirm('¿Estás seguro de que deseas eliminar esta recomendación?')) {
+      let obs$: Observable<any> | undefined;
+      if (item.type === 'TIP' && item.tip?.id) {
+        obs$ = this.tipService.deleteTip(item.tip.id);
+      } else if (item.type === 'BET_BUILDER' && item.groupTips) {
+        const deleteObservables = item.groupTips.map(t => this.tipService.deleteTip(t.id!));
+        obs$ = forkJoin(deleteObservables);
+      }
+      
+      if (obs$) {
+        obs$.subscribe({
           next: () => {
-            this.tips = this.tips.filter(t => t.id !== item.tip!.id);
             this.loadTips();
           },
-          error: (err) => {
+          error: (err: any) => {
             const msg = err.error?.message || err.message || 'Error al eliminar el tip';
             alert('Error eliminando tip: ' + msg);
           }
