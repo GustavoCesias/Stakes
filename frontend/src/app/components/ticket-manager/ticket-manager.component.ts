@@ -260,8 +260,67 @@ export class TicketManagerComponent implements OnInit {
       }
     });
 
-    // 2. Search individual Tips from availableTips
+    // 2. Search individual Tips from availableTips, grouping Bet Builders first
+    const standaloneTips: Tip[] = [];
+    const bbTipGroups = new Map<string, Tip[]>();
+    
     this.availableTips.forEach(t => {
+      const isBB = t.odds === null || t.odds === undefined || (t.event && t.event.toUpperCase().endsWith('(BB)'));
+      if (isBB) {
+        const key = `${t.date}_${(t.event || '').trim().toLowerCase()}_${t.channel?.id || 'personal'}`;
+        if (!bbTipGroups.has(key)) {
+          bbTipGroups.set(key, []);
+        }
+        bbTipGroups.get(key)!.push(t);
+      } else {
+        standaloneTips.push(t);
+      }
+    });
+
+    bbTipGroups.forEach(groupTips => {
+      if (groupTips.length === 0) return;
+      if (groupTips.length === 1) {
+        standaloneTips.push(groupTips[0]);
+        return;
+      }
+      
+      const firstTip = groupTips[0];
+      const eventName = firstTip.event || '';
+      
+      const picksSummary = groupTips
+        .map(t => `${t.market}: ${t.pick}`)
+        .join(' • ');
+
+      const fullSearchableText = `${eventName} ${picksSummary} ${firstTip.league || ''} ${firstTip.sport || ''}`.toLowerCase();
+      
+      if (fullSearchableText.includes(search)) {
+        let combinedOdds: number | null = null;
+        const tipWithOdds = groupTips.find(gt => gt.odds !== null && gt.odds !== undefined && gt.odds > 0);
+        if (tipWithOdds) combinedOdds = tipWithOdds.odds;
+        
+        const dummyBb: BetBuilder = {
+          selections: groupTips.map(t => ({ tip: t, result: t.result || 'PENDIENTE' }))
+        };
+
+        const bbKey = `${eventName}_${picksSummary}_${combinedOdds || 1.0}`;
+        if (!seenBbKeys.has(bbKey)) {
+          seenBbKeys.add(bbKey);
+          results.push({
+            type: 'BET_BUILDER',
+            id: undefined,
+            event: eventName,
+            sport: firstTip.sport,
+            league: firstTip.league,
+            date: firstTip.date,
+            betBuilder: dummyBb,
+            picksText: picksSummary,
+            finalOdds: combinedOdds ? Number(combinedOdds) : undefined
+          });
+        }
+      }
+    });
+
+    standaloneTips.forEach(t => {
       const fullSearchableText = `${t.event || ''} ${t.market || ''} ${t.pick || ''} ${t.league || ''} ${t.sport || ''}`.toLowerCase();
       if (fullSearchableText.includes(search)) {
         results.push({
