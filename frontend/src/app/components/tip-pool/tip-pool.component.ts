@@ -231,7 +231,8 @@ export class TipPoolComponent implements OnInit {
             pick: gt.pick || 'Selección',
             result: gt.result || 'PENDIENTE'
           })),
-          groupTips: groupTips
+          groupTips: groupTips,
+          tip: groupTips.length === 1 ? first : undefined
         });
       }
     });
