@@ -50,6 +50,9 @@ export class TipPoolComponent implements OnInit {
 
   editingTip: Partial<Tip> = this.getDefaultTip();
   editingBetBuilderTips: Tip[] | null = null;
+  
+  isNewBetBuilder = false;
+  newBBPicks: { market: string; pick: string }[] = [{ market: '', pick: '' }];
 
   newChannel: Partial<Channel> = { type: 'VIP' };
 
@@ -280,13 +283,18 @@ export class TipPoolComponent implements OnInit {
   }
 
   get channelItems(): BaseMaestraItem[] {
+    let result = this.allItems;
     if (this.selectedChannelFilter === 'PERSONAL') {
-      return this.allItems.filter(i => !i.channel);
+      result = result.filter(i => !i.channel);
+    } else if (this.selectedChannelFilter !== 'ALL') {
+      result = result.filter(i => i.channel?.id === Number(this.selectedChannelFilter));
     }
-    if (this.selectedChannelFilter === 'ALL') {
-      return this.allItems;
+    
+    if (this.selectedSubgroupFilter !== 'ALL') {
+      result = result.filter(i => i.subgroup?.id === Number(this.selectedSubgroupFilter));
     }
-    return this.allItems.filter(i => i.channel?.id === Number(this.selectedChannelFilter));
+    
+    return result;
   }
 
   get totalTipsCount(): number {
@@ -349,14 +357,16 @@ export class TipPoolComponent implements OnInit {
 
   get theoreticalYield(): number {
     const closedWithOdds = this.itemsWithOdds.filter(i => i.result === 'GANADA' || i.result === 'PERDIDA' || i.result === 'NULA');
-    if (closedWithOdds.length === 0) return 0;
+      if (closedWithOdds.length === 0) return 0;
     return Math.round((this.theoreticalProfit / closedWithOdds.length) * 100);
   }
 
   openNewForm() {
-    this.isEditing = false;
     this.editingTip = this.getDefaultTip();
-    this.formSubgroups = [];
+    this.editingBetBuilderTips = null;
+    this.isEditing = false;
+    this.isNewBetBuilder = false;
+    this.newBBPicks = [{ market: '', pick: '' }];
     this.showForm = true;
   }
 
@@ -427,52 +437,75 @@ export class TipPoolComponent implements OnInit {
     }
   }
 
-  saveTip() {
-    if (!this.editingTip.event || !this.editingTip.date) return;
+  addBBPick() {
+    this.newBBPicks.push({ market: '', pick: '' });
+  }
 
+  removeBBPick(index: number) {
+    if (this.newBBPicks.length > 1) {
+      this.newBBPicks.splice(index, 1);
+    }
+  }
+
+  saveTip() {
     if (this.isEditing) {
       if (this.editingBetBuilderTips) {
-        // Batch update for Bet Builder
-        const updated = this.editingBetBuilderTips.map(t => ({
-          ...t,
-          channel: this.editingTip.channel || null,
-          subgroup: this.editingTip.subgroup || null,
-          date: this.editingTip.date || '',
-          event: this.editingTip.event || '',
-          sport: this.editingTip.sport || '',
-          league: this.editingTip.league || ''
-        })) as Tip[];
-        this.tipService.updateTipsBatch(updated).subscribe({
-          next: () => {
-            this.cancelForm();
-            this.loadTips(); // recargar
-          },
-          error: (err) => console.error('Error actualizando BetBuilder tips', err)
+        // En un BB, los tips individuales NO tienen cuota. 
+        // Si el usuario puso odds, la eliminamos para no romper el grupo, 
+        // o si es la forma actual, solo dejamos que el usuario lo edite bajo su riesgo.
+        // Mejor respetamos lo que el usuario ponga y si pone odds, se separará.
+        this.editingBetBuilderTips.forEach(t => {
+          t.date = this.editingTip.date!;
+          t.event = this.editingTip.event!;
+          t.sport = this.editingTip.sport;
+          t.league = this.editingTip.league;
+          t.channel = this.editingTip.channel || null;
+          t.subgroup = this.editingTip.subgroup || null;
         });
-      } else if (this.editingTip.id) {
-        // Single update
-        this.tipService.updateTip(this.editingTip.id, this.editingTip as Tip).subscribe({
-          next: (saved) => {
-            const idx = this.tips.findIndex(t => t.id === saved.id);
-            if (idx !== -1) {
-              this.tips[idx] = saved;
-            }
-            this.cancelForm();
+        
+        this.tipService.updateTipsBatch(this.editingBetBuilderTips).subscribe({
+          next: () => {
+            this.showForm = false;
             this.loadTips();
           },
-          error: (err) => console.error('Error editando tip', err)
+          error: (err) => console.error(err)
+        });
+      } else {
+        this.tipService.updateTip(this.editingTip.id!, this.editingTip as Tip).subscribe({
+          next: () => {
+            this.showForm = false;
+            this.loadTips();
+          },
+          error: (err) => console.error(err)
         });
       }
     } else {
-      if (!this.editingTip.market || !this.editingTip.pick) return;
-      this.tipService.createTip(this.editingTip as Tip).subscribe({
-        next: (saved) => {
-          this.tips.push(saved);
-          this.cancelForm();
-          this.loadTips();
-        },
-        error: (err) => console.error('Error guardando tip', err)
-      });
+      if (this.isNewBetBuilder) {
+        // Create multiple tips for the bet builder
+        const tipsToCreate: Tip[] = this.newBBPicks.map(p => ({
+          ...this.editingTip,
+          market: p.market,
+          pick: p.pick,
+          odds: null, // Para que se agrupen solos
+          result: 'PENDIENTE'
+        } as Tip));
+        
+        this.tipService.createTipsBatch(tipsToCreate).subscribe({
+          next: () => {
+            this.showForm = false;
+            this.loadTips();
+          },
+          error: (err) => console.error(err)
+        });
+      } else {
+        this.tipService.createTip(this.editingTip as Tip).subscribe({
+          next: () => {
+            this.showForm = false;
+            this.loadTips();
+          },
+          error: (err) => console.error(err)
+        });
+      }
     }
   }
 

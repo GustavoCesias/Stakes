@@ -14,7 +14,7 @@ export interface Tip {
   league?: string;
   market: string;
   pick: string;
-  odds: number;
+  odds: number | null;
   result: string;
 }
 
@@ -56,6 +56,12 @@ export class TipService {
 
   updateTipsBatch(tips: Tip[]): Observable<Tip[]> {
     return this.http.put<Tip[]>(`${this.apiUrl}/batch`, tips).pipe(
+      tap(() => this.invalidateCache())
+    );
+  }
+
+  createTipsBatch(tips: Tip[]): Observable<Tip[]> {
+    return this.http.post<Tip[]>(`${this.apiUrl}/batch`, tips).pipe(
       tap(() => this.invalidateCache())
     );
   }
