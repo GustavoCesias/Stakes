@@ -413,6 +413,11 @@ export class TicketManagerComponent implements OnInit {
         }))
       };
 
+      // Remove the initial blank event if it exists
+      if (this.events.length === 1 && !this.events[0].name && this.events[0].picks.length === 1 && !this.events[0].picks[0].market) {
+        this.events = [];
+      }
+      
       this.events.push(event);
       this.searchTipText = '';
       this.calculateTicketType();
@@ -420,6 +425,10 @@ export class TicketManagerComponent implements OnInit {
       this.updateAutomaticTicketDate();
       this.updateAutomaticTicketResult();
     } else if (item.tip) {
+      // Remove the initial blank event if it exists
+      if (this.events.length === 1 && !this.events[0].name && this.events[0].picks.length === 1 && !this.events[0].picks[0].market) {
+        this.events = [];
+      }
       this.addSearchedSelection(item.tip);
     }
   }
@@ -751,6 +760,9 @@ export class TicketManagerComponent implements OnInit {
     let channelObj = this.currentChannelId && this.currentView === 'channel' ? { id: this.currentChannelId, name: '', type: '' } : null;
 
     this.events.forEach(e => {
+      // Skip completely empty events to avoid database unique constraint errors on generated IDs
+      if (!e.name && e.picks.length === 1 && !e.picks[0].market && !e.picks[0].pick) return;
+
       const isBB = e.isBetBuilder || e.picks.length > 1;
       const eventName = (e.name && e.name.trim()) ? e.name : 'Evento';
       if (!isBB && e.picks.length === 1) {
