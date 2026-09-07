@@ -240,7 +240,7 @@ export class TicketManagerComponent implements OnInit {
 
           if (fullSearchableText.includes(search)) {
             const bbOdds = bb.realOdds || bb.expectedOdds || 1.0;
-            const bbKey = `${eventName}_${picksSummary}_${bbOdds}`;
+            const bbKey = `${eventName}_${picksSummary}`;
             if (!seenBbKeys.has(bbKey)) {
               seenBbKeys.add(bbKey);
               results.push({
@@ -302,7 +302,7 @@ export class TicketManagerComponent implements OnInit {
           selections: groupTips.map(t => ({ tip: t, result: t.result || 'PENDIENTE' }))
         };
 
-        const bbKey = `${eventName}_${picksSummary}_${combinedOdds || 1.0}`;
+        const bbKey = `${eventName}_${picksSummary}`;
         if (!seenBbKeys.has(bbKey)) {
           seenBbKeys.add(bbKey);
           results.push({
