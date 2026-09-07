@@ -375,6 +375,7 @@ export class TipPoolComponent implements OnInit {
     if (item.type === 'BET_BUILDER' && item.groupTips && item.groupTips.length > 0) {
       this.editingBetBuilderTips = item.groupTips;
       this.editingTip = { ...item.groupTips[0] };
+      this.editingTip.odds = item.odds;
     } else if (item.tip) {
       this.editingBetBuilderTips = null;
       this.editingTip = { ...item.tip };
@@ -454,13 +455,14 @@ export class TipPoolComponent implements OnInit {
         // Si el usuario puso odds, la eliminamos para no romper el grupo, 
         // o si es la forma actual, solo dejamos que el usuario lo edite bajo su riesgo.
         // Mejor respetamos lo que el usuario ponga y si pone odds, se separará.
-        this.editingBetBuilderTips.forEach(t => {
+        this.editingBetBuilderTips.forEach((t, index) => {
           t.date = this.editingTip.date!;
           t.event = this.editingTip.event!;
           t.sport = this.editingTip.sport;
           t.league = this.editingTip.league;
           t.channel = this.editingTip.channel || null;
           t.subgroup = this.editingTip.subgroup || null;
+          t.odds = index === 0 ? (this.editingTip.odds ?? null) : null;
         });
         
         this.tipService.updateTipsBatch(this.editingBetBuilderTips).subscribe({
