@@ -241,7 +241,7 @@
               </td>
               <td class="px-5 py-4 whitespace-nowrap text-right">
                 <div class="flex justify-end items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  @if (item.type === 'TIP' && item.tip) {
+                  @if (item.tip || item.groupTips) {
                     <!-- Botones de estado rapido -->
                     <button (click)="updateTipResult(item, 'GANADA')" class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 flex items-center justify-center transition-all text-xs" title="Marcar Ganada">✅</button>
                     <button (click)="updateTipResult(item, 'PERDIDA')" class="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 flex items-center justify-center transition-all text-xs" title="Marcar Perdida">❌</button>

@@ -164,7 +164,9 @@ export class TipPoolComponent implements OnInit {
     this.tips.forEach(t => {
       if (t.id && seenTipIdsInBB.has(t.id)) return;
 
-      if (t.odds === null || t.odds === undefined) {
+      const isBB = t.odds === null || t.odds === undefined || (t.event && t.event.toUpperCase().endsWith('(BB)'));
+
+      if (isBB) {
         const key = `${t.date}_${(t.event || '').trim().toLowerCase()}_${t.channel?.id || 'personal'}`;
         if (!bbTipGroups.has(key)) {
           bbTipGroups.set(key, []);
@@ -181,6 +183,11 @@ export class TipPoolComponent implements OnInit {
 
       const first = groupTips[0];
       let combinedOdds: number | null = null;
+      
+      const tipWithOdds = groupTips.find(gt => gt.odds !== null && gt.odds !== undefined);
+      if (tipWithOdds) {
+        combinedOdds = tipWithOdds.odds;
+      }
       for (const t of this.tickets) {
         if (t.betBuilders) {
           for (const bb of t.betBuilders) {
@@ -451,13 +458,14 @@ export class TipPoolComponent implements OnInit {
   saveTip() {
     if (this.isEditing) {
       if (this.editingBetBuilderTips) {
-        // En un BB, los tips individuales NO tienen cuota. 
-        // Si el usuario puso odds, la eliminamos para no romper el grupo, 
-        // o si es la forma actual, solo dejamos que el usuario lo edite bajo su riesgo.
-        // Mejor respetamos lo que el usuario ponga y si pone odds, se separará.
+        let finalEvent = this.editingTip.event || '';
+        if (!finalEvent.toUpperCase().endsWith('(BB)')) {
+          finalEvent = finalEvent + ' (BB)';
+        }
+
         this.editingBetBuilderTips.forEach((t, index) => {
           t.date = this.editingTip.date!;
-          t.event = this.editingTip.event!;
+          t.event = finalEvent;
           t.sport = this.editingTip.sport;
           t.league = this.editingTip.league;
           t.channel = this.editingTip.channel || null;
@@ -483,12 +491,18 @@ export class TipPoolComponent implements OnInit {
       }
     } else {
       if (this.isNewBetBuilder) {
+        let finalEvent = this.editingTip.event || '';
+        if (!finalEvent.toUpperCase().endsWith('(BB)')) {
+          finalEvent = finalEvent + ' (BB)';
+        }
+
         // Create multiple tips for the bet builder
-        const tipsToCreate: Tip[] = this.newBBPicks.map(p => ({
+        const tipsToCreate: Tip[] = this.newBBPicks.map((p, index) => ({
           ...this.editingTip,
+          event: finalEvent,
           market: p.market,
           pick: p.pick,
-          odds: null, // Para que se agrupen solos
+          odds: index === 0 ? (this.editingTip.odds ?? null) : null,
           result: 'PENDIENTE'
         } as Tip));
         
@@ -520,7 +534,15 @@ export class TipPoolComponent implements OnInit {
           if (idx !== -1) this.tips[idx] = saved;
           this.loadTips();
         },
-        error: (err) => alert('Error actualizando resultado. Error: ' + err.message)
+        error: (err) => console.error(err)
+      });
+    } else if (item.type === 'BET_BUILDER' && item.groupTips) {
+      const updatedTips = item.groupTips.map(t => ({ ...t, result: result } as Tip));
+      this.tipService.updateTipsBatch(updatedTips).subscribe({
+        next: () => {
+          this.loadTips();
+        },
+        error: (err) => console.error(err)
       });
     }
   }
