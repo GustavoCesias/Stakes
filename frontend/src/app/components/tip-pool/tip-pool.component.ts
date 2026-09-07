@@ -387,6 +387,7 @@ export class TipPoolComponent implements OnInit {
       this.editingBetBuilderTips = null;
       this.editingTip = { ...item.tip };
     }
+    this.isNewBetBuilder = false;
     this.showForm = true;
     this.onChannelSelected(false);
   }
