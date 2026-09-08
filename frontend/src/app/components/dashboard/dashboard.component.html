@@ -177,6 +177,65 @@
     </div>
   }
 
+  <!-- ══════ BANKROLL CHART ══════ -->
+  @if (!isLoading) {
+    <div class="bg-slate-900/60 p-5 rounded-3xl border border-white/10 relative">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            📊 Gráfico de Rendimiento
+          </h3>
+          <p class="text-xs text-gray-400">Evolución diaria de tus beneficios y capital</p>
+        </div>
+
+        <div class="flex items-center gap-3 bg-slate-800/80 p-1.5 rounded-2xl border border-white/5 overflow-x-auto custom-scrollbar">
+          <!-- Mode Toggle -->
+          <div class="flex items-center bg-slate-900/80 rounded-xl p-1 shrink-0">
+            <button (click)="setChartMode('bankroll')" 
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              [ngClass]="chartMode === 'bankroll' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-white'">
+              Banca
+            </button>
+            <button (click)="setChartMode('profit')" 
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              [ngClass]="chartMode === 'profit' ? 'bg-emerald-600 text-white shadow-md' : 'text-gray-400 hover:text-white'">
+              Ganancias
+            </button>
+          </div>
+
+          <div class="w-px h-6 bg-white/10 shrink-0"></div>
+
+          <!-- Time Range -->
+          <div class="flex items-center bg-slate-900/80 rounded-xl p-1 shrink-0">
+            <button (click)="setChartTimeRange('7d')" 
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              [ngClass]="chartTimeRange === '7d' ? 'bg-slate-700 text-white shadow-md' : 'text-gray-400 hover:text-white'">
+              7D
+            </button>
+            <button (click)="setChartTimeRange('30d')" 
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              [ngClass]="chartTimeRange === '30d' ? 'bg-slate-700 text-white shadow-md' : 'text-gray-400 hover:text-white'">
+              30D
+            </button>
+            <button (click)="setChartTimeRange('all')" 
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              [ngClass]="chartTimeRange === 'all' ? 'bg-slate-700 text-white shadow-md' : 'text-gray-400 hover:text-white'">
+              Todos
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full h-64 relative">
+        <canvas baseChart
+          [data]="chartData"
+          [options]="chartOptions"
+          [type]="chartType">
+        </canvas>
+      </div>
+    </div>
+  }
+
   <!-- ══════ KPI CARDS ══════ -->
   @if (!isLoading) {
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">

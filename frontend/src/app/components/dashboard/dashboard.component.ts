@@ -8,11 +8,13 @@ import { ChannelService, Channel } from '../../services/channel.service';
 import { RouterModule } from '@angular/router';
 import { CountResultPipe } from '../../services/count-result.pipe';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, CountResultPipe, TicketDetailModalComponent],
+  imports: [CommonModule, FormsModule, RouterModule, CountResultPipe, TicketDetailModalComponent, BaseChartDirective],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -54,6 +56,22 @@ export class DashboardComponent implements OnInit {
 
   showHistoryModal = false;
 
+  // Chart state
+  chartTimeRange: '7d' | '30d' | 'all' = '30d';
+  chartMode: 'bankroll' | 'profit' = 'bankroll';
+
+  chartOptions: ChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+    }
+  };
+  chartData: any = { labels: [], datasets: [] };
+  chartType: ChartType = 'line';
+
   ngOnInit() {
     this.loadTickets();
     this.loadChannels();
@@ -69,6 +87,7 @@ export class DashboardComponent implements OnInit {
         next: (data) => {
           this.allRawTickets = data;
           this.isLoading = false;
+          this.updateChart();
         },
         error: () => { this.isLoading = false; }
       });
@@ -91,6 +110,7 @@ export class DashboardComponent implements OnInit {
         this.totalDeposits = Number(data.totalDeposits) || 0;
         this.totalWithdrawals = Number(data.totalWithdrawals) || 0;
         this.transactions = data.transactions || [];
+        this.updateChart();
       },
       error: (err) => console.error('Error loading bankroll', err)
     });
@@ -116,10 +136,22 @@ export class DashboardComponent implements OnInit {
 
   setMode(mode: 'mine' | 'tipster') {
     this.activeMode = mode;
+    this.updateChart();
   }
 
   setChannelFilter(channelId: number | null) {
     this.selectedChannelId = channelId;
+    this.updateChart();
+  }
+
+  setChartTimeRange(range: '7d' | '30d' | 'all') {
+    this.chartTimeRange = range;
+    this.updateChart();
+  }
+
+  setChartMode(mode: 'bankroll' | 'profit') {
+    this.chartMode = mode;
+    this.updateChart();
   }
 
   get myTickets(): Ticket[] { return this.allRawTickets.filter(t => !t.originalTipster); }
@@ -302,6 +334,123 @@ export class DashboardComponent implements OnInit {
         next: () => this.loadBankroll(),
         error: (err) => alert('Error eliminando movimiento: ' + err.message)
       });
+    }
+  }
+
+  updateChart() {
+    if (this.isLoading) return;
+    
+    // 1. Determine date range
+    const today = new Date();
+    // Use local timezone for today
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const localToday = new Date(today.getTime() - tzOffset);
+    const todayStr = localToday.toISOString().substring(0, 10);
+    
+    let startStr = this.bankrollStartDate;
+    if (this.chartTimeRange === '7d') {
+      const d = new Date(localToday.getTime() - 6 * 24 * 60 * 60 * 1000);
+      startStr = d.toISOString().substring(0, 10);
+    } else if (this.chartTimeRange === '30d') {
+      const d = new Date(localToday.getTime() - 29 * 24 * 60 * 60 * 1000);
+      startStr = d.toISOString().substring(0, 10);
+    }
+    
+    // Ensure startStr is not before bankrollStartDate
+    if (startStr < this.bankrollStartDate) {
+      startStr = this.bankrollStartDate;
+    }
+
+    // 2. Build array of dates
+    const dates: string[] = [];
+    let currentD = new Date(startStr);
+    const endD = new Date(todayStr);
+    while (currentD <= endD) {
+      dates.push(currentD.toISOString().substring(0, 10));
+      currentD.setDate(currentD.getDate() + 1);
+    }
+
+    // 3. Calculate daily profit and net deposits using ALL raw tickets matching the active mode/channel
+    const dailyProfitMap = new Map<string, number>();
+    const dailyNetDepositsMap = new Map<string, number>();
+
+    dates.forEach(d => {
+      dailyProfitMap.set(d, 0);
+      dailyNetDepositsMap.set(d, 0);
+    });
+
+    // Use this.tickets which respects activeMode and selectedChannelId
+    this.tickets.filter(t => t.result === 'GANADA' || t.result === 'PERDIDA').forEach(t => {
+      const d = t.date;
+      if (dailyProfitMap.has(d)) {
+        dailyProfitMap.set(d, dailyProfitMap.get(d)! + Number(t.profit || 0));
+      }
+    });
+
+    this.transactions.forEach(tx => {
+      const d = tx.date;
+      if (dailyNetDepositsMap.has(d)) {
+        const amt = tx.type === 'DEPOSIT' ? Number(tx.amount) : -Number(tx.amount);
+        dailyNetDepositsMap.set(d, dailyNetDepositsMap.get(d)! + amt);
+      }
+    });
+
+    // Calculate historical base before startStr
+    let initialBankrollAtStartDate = Number(this.initialBalance) || 0;
+    this.tickets.filter(t => t.result === 'GANADA' || t.result === 'PERDIDA').forEach(t => {
+       if (t.date < startStr) {
+           initialBankrollAtStartDate += Number(t.profit || 0);
+       }
+    });
+    this.transactions.forEach(tx => {
+       if (tx.date < startStr) {
+           const amt = tx.type === 'DEPOSIT' ? Number(tx.amount) : -Number(tx.amount);
+           initialBankrollAtStartDate += amt;
+       }
+    });
+
+    // 4. Build datasets
+    const labels = dates.map(d => {
+      const parts = d.split('-');
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
+      return d;
+    });
+
+    if (this.chartMode === 'profit') {
+      const data = dates.map(d => parseFloat((dailyProfitMap.get(d) || 0).toFixed(2)));
+      this.chartType = 'bar';
+      this.chartData = {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: data.map(val => val >= 0 ? 'rgba(52, 211, 153, 0.8)' : 'rgba(248, 113, 113, 0.8)'),
+          borderColor: data.map(val => val >= 0 ? 'rgb(52, 211, 153)' : 'rgb(248, 113, 113)'),
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      };
+    } else {
+      let current = initialBankrollAtStartDate;
+      const data = dates.map(d => {
+        current += (dailyNetDepositsMap.get(d) || 0) + (dailyProfitMap.get(d) || 0);
+        return parseFloat(current.toFixed(2));
+      });
+      this.chartType = 'line';
+      this.chartData = {
+        labels,
+        datasets: [{
+          data,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#3b82f6',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: '#3b82f6',
+          borderWidth: 2
+        }]
+      };
     }
   }
 }
