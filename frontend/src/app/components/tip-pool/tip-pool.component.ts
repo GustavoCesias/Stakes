@@ -449,12 +449,35 @@ export class TipPoolComponent implements OnInit {
   }
 
   addBBPick() {
-    this.newBBPicks.push({ market: '', pick: '' });
+    if (this.isNewBetBuilder) {
+      this.newBBPicks.push({ market: '', pick: '' });
+    } else if (this.editingBetBuilderTips) {
+      this.editingBetBuilderTips.push({ market: '', pick: '' } as Tip);
+    }
   }
 
   removeBBPick(index: number) {
-    if (this.newBBPicks.length > 1) {
-      this.newBBPicks.splice(index, 1);
+    if (this.isNewBetBuilder) {
+      if (this.newBBPicks.length > 1) {
+        this.newBBPicks.splice(index, 1);
+      }
+    } else if (this.editingBetBuilderTips) {
+      if (this.editingBetBuilderTips.length > 1) {
+        const pickToRemove = this.editingBetBuilderTips[index];
+        if (pickToRemove.id) {
+          if (confirm('¿Eliminar este pronóstico de la base de datos permanentemente?')) {
+            this.tipService.deleteTip(pickToRemove.id).subscribe({
+              next: () => {
+                this.editingBetBuilderTips!.splice(index, 1);
+                this.loadTips();
+              },
+              error: (err) => alert('Error eliminando pick: ' + (err.error?.message || err.message))
+            });
+          }
+        } else {
+          this.editingBetBuilderTips.splice(index, 1);
+        }
+      }
     }
   }
 
