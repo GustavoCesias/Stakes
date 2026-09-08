@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TicketService, Ticket } from '../../services/ticket.service';
@@ -8,17 +8,20 @@ import { ChannelService, Channel } from '../../services/channel.service';
 import { RouterModule } from '@angular/router';
 import { CountResultPipe } from '../../services/count-result.pipe';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartOptions, ChartType } from 'chart.js';
+import { Chart, ChartConfiguration, ChartOptions, ChartType, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, CountResultPipe, TicketDetailModalComponent, BaseChartDirective],
+  imports: [CommonModule, FormsModule, RouterModule, CountResultPipe, TicketDetailModalComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
+  @ViewChild('chartCanvas') chartCanvas!: ElementRef;
+  chartInstance: Chart | null = null;
   private ticketService = inject(TicketService);
   private bankrollService = inject(BankrollService);
   private channelService = inject(ChannelService);
@@ -59,18 +62,6 @@ export class DashboardComponent implements OnInit {
   // Chart state
   chartTimeRange: '7d' | '30d' | 'all' = '30d';
   chartMode: 'bankroll' | 'profit' = 'bankroll';
-
-  chartOptions: ChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
-      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
-    }
-  };
-  chartData: any = { labels: [], datasets: [] };
-  chartType: ChartType = 'line';
 
   ngOnInit() {
     this.loadTickets();
@@ -418,39 +409,72 @@ export class DashboardComponent implements OnInit {
 
     if (this.chartMode === 'profit') {
       const data = dates.map(d => parseFloat((dailyProfitMap.get(d) || 0).toFixed(2)));
-      this.chartType = 'bar';
-      this.chartData = {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: data.map(val => val >= 0 ? 'rgba(52, 211, 153, 0.8)' : 'rgba(248, 113, 113, 0.8)'),
-          borderColor: data.map(val => val >= 0 ? 'rgb(52, 211, 153)' : 'rgb(248, 113, 113)'),
-          borderWidth: 1,
-          borderRadius: 4
-        }]
-      };
+      
+      this.renderChart({
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: data.map(val => val >= 0 ? 'rgba(52, 211, 153, 0.8)' : 'rgba(248, 113, 113, 0.8)'),
+            borderColor: data.map(val => val >= 0 ? 'rgb(52, 211, 153)' : 'rgb(248, 113, 113)'),
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: this.getChartOptions()
+      });
     } else {
       let current = initialBankrollAtStartDate;
       const data = dates.map(d => {
         current += (dailyNetDepositsMap.get(d) || 0) + (dailyProfitMap.get(d) || 0);
         return parseFloat(current.toFixed(2));
       });
-      this.chartType = 'line';
-      this.chartData = {
-        labels,
-        datasets: [{
-          data,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          fill: true,
-          tension: 0.3,
-          pointBackgroundColor: '#3b82f6',
-          pointBorderColor: '#fff',
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: '#3b82f6',
-          borderWidth: 2
-        }]
-      };
+      
+      this.renderChart({
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#3b82f6',
+            borderWidth: 2
+          }]
+        },
+        options: this.getChartOptions()
+      });
     }
+  }
+  
+  private getChartOptions(): any {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+      }
+    };
+  }
+
+  private renderChart(config: any) {
+    if (!this.chartCanvas) {
+      setTimeout(() => this.renderChart(config), 50);
+      return;
+    }
+    
+    if (this.chartInstance) {
+      this.chartInstance.destroy();
+    }
+    
+    this.chartInstance = new Chart(this.chartCanvas.nativeElement, config);
   }
 }
