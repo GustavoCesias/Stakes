@@ -234,6 +234,7 @@ export class TicketManagerComponent implements OnInit {
           const picksSummary = bb.selections
             .filter(s => s.tip)
             .map(s => `${s.tip?.market}: ${s.tip?.pick}`)
+            .sort()
             .join(' • ');
 
           const fullSearchableText = `${eventName} ${picksSummary} ${firstTip.league || ''} ${firstTip.sport || ''}`.toLowerCase();
@@ -289,6 +290,7 @@ export class TicketManagerComponent implements OnInit {
       
       const picksSummary = groupTips
         .map(t => `${t.market}: ${t.pick}`)
+        .sort()
         .join(' • ');
 
       const fullSearchableText = `${eventName} ${picksSummary} ${firstTip.league || ''} ${firstTip.sport || ''}`.toLowerCase();
