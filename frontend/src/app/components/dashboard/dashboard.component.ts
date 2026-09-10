@@ -152,15 +152,17 @@ export class DashboardComponent implements OnInit {
   }
 
   get winRate(): number {
-    const closed = this.tickets.filter(t => t.result === 'GANADA' || t.result === 'PERDIDA');
+    const closed = this.tickets.filter(t => t.result !== 'PENDIENTE');
     if (closed.length === 0) return 0;
-    return Math.round((closed.filter(t => t.result === 'GANADA').length / closed.length) * 100);
+    // We consider GANADA and CASHOUT with positive profit as a win
+    const wonCount = closed.filter(t => t.result === 'GANADA' || (t.result === 'CASHOUT' && Number(t.profit) > 0)).length;
+    return Math.round((wonCount / closed.length) * 100);
   }
 
   get winRateDetail(): string {
-    const closed = this.tickets.filter(t => t.result === 'GANADA' || t.result === 'PERDIDA');
-    const won = closed.filter(t => t.result === 'GANADA').length;
-    return `${won} de ${closed.length} cerradas`;
+    const closed = this.tickets.filter(t => t.result !== 'PENDIENTE');
+    const wonCount = closed.filter(t => t.result === 'GANADA' || (t.result === 'CASHOUT' && Number(t.profit) > 0)).length;
+    return `${wonCount} de ${closed.length} cerradas`;
   }
 
   get pendingTickets(): Ticket[] {
@@ -371,7 +373,7 @@ export class DashboardComponent implements OnInit {
     });
 
     // Use this.tickets which respects activeMode and selectedChannelId
-    this.tickets.filter(t => t.result === 'GANADA' || t.result === 'PERDIDA').forEach(t => {
+    this.tickets.filter(t => t.result !== 'PENDIENTE').forEach(t => {
       const d = t.date;
       if (dailyProfitMap.has(d)) {
         dailyProfitMap.set(d, dailyProfitMap.get(d)! + Number(t.profit || 0));
@@ -388,7 +390,7 @@ export class DashboardComponent implements OnInit {
 
     // Calculate historical base before startStr
     let initialBankrollAtStartDate = Number(this.initialBalance) || 0;
-    this.tickets.filter(t => t.result === 'GANADA' || t.result === 'PERDIDA').forEach(t => {
+    this.tickets.filter(t => t.result !== 'PENDIENTE').forEach(t => {
        if (t.date < startStr) {
            initialBankrollAtStartDate += Number(t.profit || 0);
        }
