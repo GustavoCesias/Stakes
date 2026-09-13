@@ -1,0 +1,179 @@
+<div class="p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-white">Configuración</h2>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-4 mb-6 border-b border-gray-800 pb-2">
+    <button (click)="activeTab = 'markets'" 
+            [class.text-emerald-400]="activeTab === 'markets'" 
+            [class.border-emerald-400]="activeTab === 'markets'"
+            class="px-4 py-2 font-medium text-gray-400 hover:text-white border-b-2 border-transparent transition-colors">
+      Mercados
+    </button>
+    <button (click)="activeTab = 'sports'" 
+            [class.text-emerald-400]="activeTab === 'sports'" 
+            [class.border-emerald-400]="activeTab === 'sports'"
+            class="px-4 py-2 font-medium text-gray-400 hover:text-white border-b-2 border-transparent transition-colors">
+      Deportes
+    </button>
+    <button (click)="activeTab = 'leagues'" 
+            [class.text-emerald-400]="activeTab === 'leagues'" 
+            [class.border-emerald-400]="activeTab === 'leagues'"
+            class="px-4 py-2 font-medium text-gray-400 hover:text-white border-b-2 border-transparent transition-colors">
+      Ligas
+    </button>
+  </div>
+
+  <!-- Tab: Markets -->
+  <div *ngIf="activeTab === 'markets'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Form -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 h-fit">
+      <h3 class="text-lg font-medium text-white mb-4">Crear Nuevo Mercado</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Nombre (ej. Goles Totales)</label>
+          <input type="text" [(ngModel)]="newMarket.name" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+        </div>
+        
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Tipo de Respuesta</label>
+          <select [(ngModel)]="newMarket.inputType" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+            <option value="NUMERIC">Numérico (ej. 2.5)</option>
+            <option value="OPTIONS">Opciones Múltiples (Botones)</option>
+            <option value="TEXT">Texto Libre</option>
+          </select>
+        </div>
+
+        <div *ngIf="newMarket.inputType === 'OPTIONS'" class="p-4 bg-gray-900 rounded-lg border border-gray-700 space-y-3">
+          <label class="block text-sm text-gray-400">Opciones (Añade una por una)</label>
+          <div class="flex gap-2">
+            <input type="text" [(ngModel)]="newMarketOption" (keyup.enter)="addMarketOption()" placeholder="Ej. Local" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white outline-none focus:border-emerald-500">
+            <button (click)="addMarketOption()" class="px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">Añadir</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <span *ngFor="let opt of newMarket.options; let i = index" class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-sm flex items-center gap-2 border border-emerald-500/30">
+              {{opt}}
+              <button (click)="removeMarketOption(i)" class="text-emerald-400 hover:text-emerald-300 font-bold">&times;</button>
+            </span>
+            <span *ngIf="!newMarket.options?.length" class="text-sm text-gray-500 italic">No has añadido opciones.</span>
+          </div>
+        </div>
+
+        <button (click)="addMarket()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded-lg transition-colors mt-2">
+          Guardar Mercado
+        </button>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+      <h3 class="text-lg font-medium text-white mb-4">Mercados Guardados</h3>
+      <div class="space-y-3">
+        <div *ngFor="let market of markets" class="bg-gray-900 border border-gray-700 rounded-lg p-3 flex justify-between items-center group">
+          <div>
+            <div class="text-white font-medium">{{market.name}}</div>
+            <div class="text-sm text-gray-400 flex gap-2 items-center mt-1">
+              <span class="px-2 py-0.5 bg-gray-800 rounded text-xs border border-gray-700">{{market.inputType}}</span>
+              <span *ngIf="market.inputType === 'OPTIONS'" class="text-xs text-gray-500 truncate max-w-[150px]">
+                {{market.options.join(', ')}}
+              </span>
+            </div>
+          </div>
+          <button (click)="deleteMarket(market.id!)" class="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+        <div *ngIf="markets.length === 0" class="text-center py-8 text-gray-500">
+          No hay mercados configurados.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Sports -->
+  <div *ngIf="activeTab === 'sports'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Form -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 h-fit">
+      <h3 class="text-lg font-medium text-white mb-4">Añadir Deporte</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Nombre del Deporte</label>
+          <input type="text" [(ngModel)]="newSport.name" placeholder="Ej. Fútbol" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Icono / Emoji (Opcional)</label>
+          <input type="text" [(ngModel)]="newSport.icon" placeholder="Ej. ⚽" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+        </div>
+        <button (click)="addSport()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded-lg transition-colors mt-2">
+          Guardar Deporte
+        </button>
+      </div>
+    </div>
+    
+    <!-- List -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+      <h3 class="text-lg font-medium text-white mb-4">Deportes Registrados</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div *ngFor="let sport of sports" class="bg-gray-900 border border-gray-700 rounded-lg p-3 flex justify-between items-center group">
+          <div class="text-white font-medium flex items-center gap-2">
+            <span *ngIf="sport.icon">{{sport.icon}}</span>
+            {{sport.name}}
+          </div>
+          <button (click)="deleteSport(sport.id!)" class="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Leagues -->
+  <div *ngIf="activeTab === 'leagues'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Form -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 h-fit">
+      <h3 class="text-lg font-medium text-white mb-4">Añadir Liga / Competición</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Deporte</label>
+          <select [(ngModel)]="newLeague.sport" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+            <option [ngValue]="undefined">Selecciona un deporte</option>
+            <option *ngFor="let sport of sports" [ngValue]="sport">{{sport.icon}} {{sport.name}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Nombre de la Liga</label>
+          <input type="text" [(ngModel)]="newLeague.name" placeholder="Ej. Premier League" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">País / Región (Opcional)</label>
+          <input type="text" [(ngModel)]="newLeague.country" placeholder="Ej. Inglaterra" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+        </div>
+        <button (click)="addLeague()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded-lg transition-colors mt-2" [disabled]="!newLeague.sport || !newLeague.name">
+          Guardar Liga
+        </button>
+      </div>
+    </div>
+    
+    <!-- List -->
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
+      <h3 class="text-lg font-medium text-white mb-4">Ligas Registradas</h3>
+      <div class="space-y-3">
+        <div *ngFor="let league of leagues" class="bg-gray-900 border border-gray-700 rounded-lg p-3 flex justify-between items-center group">
+          <div>
+            <div class="text-white font-medium">{{league.name}}</div>
+            <div class="text-sm text-gray-400 flex gap-2 items-center mt-1">
+              <span class="text-emerald-400/80">{{league.sport.name}}</span>
+              <span *ngIf="league.country" class="px-2 py-0.5 bg-gray-800 rounded text-xs border border-gray-700">{{league.country}}</span>
+            </div>
+          </div>
+          <button (click)="deleteLeague(league.id!)" class="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

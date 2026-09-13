@@ -553,10 +553,20 @@
             <option value="PENDIENTE">⏳ PENDIENTE</option>
             <option value="GANADA">✅ GANADA</option>
             <option value="PERDIDA">❌ PERDIDA</option>
-            <option value="CASHOUT">💰 CASHOUT</option>
-            <option value="NULA">🔄 NULA</option>
+            <option value="CASHOUT">💸 CASHOUT</option>
+            <option value="NULA">⚪ NULA</option>
           </select>
         </div>
+
+        @if (newTicket.result === 'CASHOUT') {
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Monto Cashout</label>
+            <div class="relative">
+              <span class="absolute left-4 top-3 text-amber-400 font-bold">$</span>
+              <input type="number" [(ngModel)]="newTicket.cashoutAmount" name="cashoutAmount" step="0.01" class="block w-full bg-slate-800 border border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-white pl-8 pr-4 py-3 text-sm transition-all outline-none" required>
+            </div>
+          </div>
+        }
 
         @if (currentView === 'channel' && channelSubgroups.length > 0) {
           <div>
@@ -642,13 +652,22 @@
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
-                <input type="text" [(ngModel)]="event.name" name="eventName{{i}}" placeholder="Nombre (Ej. RM vs FCB)" class="w-full bg-slate-900 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm transition-all outline-none" required>
+                <input type="text" [(ngModel)]="event.name" (change)="onEventChange(event)" name="eventName{{i}}" placeholder="Nombre (Ej. RM vs FCB)" list="eventOptions" class="w-full bg-slate-900 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm transition-all outline-none" required>
+                <datalist id="eventOptions">
+                  <option *ngFor="let ev of calendarEvents" [value]="ev.homeTeam + ' vs ' + ev.awayTeam"></option>
+                </datalist>
               </div>
               <div>
-                <input type="text" [(ngModel)]="event.sport" name="eventSport{{i}}" placeholder="Deporte (Opcional)" class="w-full bg-slate-900 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm transition-all outline-none">
+                <input type="text" [(ngModel)]="event.sport" (change)="onSportChange(event)" name="eventSport{{i}}" placeholder="Deporte (Opcional)" list="sportOptions" class="w-full bg-slate-900 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm transition-all outline-none">
+                <datalist id="sportOptions">
+                  <option *ngFor="let s of sports" [value]="s.name"></option>
+                </datalist>
               </div>
               <div>
-                <input type="text" [(ngModel)]="event.league" name="eventLeague{{i}}" placeholder="Liga / Competición (Opcional)" class="w-full bg-slate-900 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm transition-all outline-none">
+                <input type="text" [(ngModel)]="event.league" name="eventLeague{{i}}" placeholder="Liga / Competición (Opcional)" list="leagueOptions" class="w-full bg-slate-900 border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-white px-4 py-2.5 text-sm transition-all outline-none">
+                <datalist id="leagueOptions">
+                  <option *ngFor="let l of filteredLeagues" [value]="l.name"></option>
+                </datalist>
               </div>
             </div>
 
@@ -660,11 +679,17 @@
                   <div class="flex items-center gap-3 bg-slate-800 p-2 rounded-lg border border-white/5 hover:border-white/20 transition-all">
                     <span class="text-gray-600 font-bold text-xs w-4 text-center">{{ j + 1 }}</span>
                     <div class="flex-1">
-                      <input type="text" [(ngModel)]="pick.market" name="market_{{i}}_{{j}}" placeholder="Mercado" class="w-full bg-transparent border-none text-white px-2 py-1 text-sm focus:ring-0 placeholder-gray-500" required>
+                      <input type="text" [(ngModel)]="pick.market" name="market_{{i}}_{{j}}" placeholder="Mercado" list="marketOptions" class="w-full bg-transparent border-none text-white px-2 py-1 text-sm focus:ring-0 placeholder-gray-500" required>
+                      <datalist id="marketOptions">
+                        <option *ngFor="let m of markets" [value]="m.name"></option>
+                      </datalist>
                     </div>
                     <div class="w-px h-6 bg-white/10"></div>
                     <div class="flex-1">
-                      <input type="text" [(ngModel)]="pick.pick" name="pick_{{i}}_{{j}}" placeholder="Pronóstico" class="w-full bg-transparent border-none text-white px-2 py-1 text-sm focus:ring-0 placeholder-gray-500 font-bold text-emerald-400" required>
+                      <input type="text" [(ngModel)]="pick.pick" name="pick_{{i}}_{{j}}" placeholder="Pronóstico" [attr.list]="'pickOptions_' + i + '_' + j" class="w-full bg-transparent border-none text-white px-2 py-1 text-sm focus:ring-0 placeholder-gray-500 font-bold text-emerald-400" required>
+                      <datalist [id]="'pickOptions_' + i + '_' + j">
+                        <option *ngFor="let opt of getMarketOptions(pick.market)" [value]="opt"></option>
+                      </datalist>
                     </div>
                     <div class="w-px h-6 bg-white/10"></div>
                     <div class="w-24 relative">

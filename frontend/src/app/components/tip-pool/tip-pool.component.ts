@@ -5,6 +5,8 @@ import { forkJoin, Observable } from 'rxjs';
 import { TipService, Tip } from '../../services/tip.service';
 import { ChannelService, Channel, ChannelSubgroup } from '../../services/channel.service';
 import { TicketService, Ticket, BetBuilder } from '../../services/ticket.service';
+import { ConfigService, Sport, League, MarketConfig } from '../../services/config.service';
+import { CalendarService, SportEvent } from '../../services/calendar.service';
 
 export interface BaseMaestraItem {
   id: string;
@@ -41,6 +43,13 @@ export class TipPoolComponent implements OnInit {
   tickets: Ticket[] = [];
   channels: Channel[] = [];
 
+  // Config & Calendar data
+  sports: Sport[] = [];
+  leagues: League[] = [];
+  markets: MarketConfig[] = [];
+  calendarEvents: SportEvent[] = [];
+  filteredLeagues: League[] = [];
+
   searchText = '';
   filterResult: string = 'ALL';
   selectedChannelFilter: number | 'ALL' | 'PERSONAL' = 'ALL';
@@ -60,11 +69,32 @@ export class TipPoolComponent implements OnInit {
   private tipService = inject(TipService);
   private channelService = inject(ChannelService);
   private ticketService = inject(TicketService);
+  private configService = inject(ConfigService);
+  private calendarService = inject(CalendarService);
 
   ngOnInit() {
     this.loadTips();
     this.loadChannels();
     this.loadTickets();
+    this.loadConfigData();
+  }
+
+  loadConfigData() {
+    this.configService.getSports().subscribe(data => this.sports = data);
+    this.configService.getLeagues().subscribe(data => {
+      this.leagues = data;
+      this.filteredLeagues = data;
+    });
+    this.configService.getMarkets().subscribe(data => this.markets = data);
+    
+    // Load events from -7 days to +14 days to have a broad range for autocomplete
+    const dStart = new Date();
+    dStart.setDate(dStart.getDate() - 7);
+    const dEnd = new Date();
+    dEnd.setDate(dEnd.getDate() + 14);
+    this.calendarService.getEvents(dStart.toISOString(), dEnd.toISOString()).subscribe(data => {
+      this.calendarEvents = data;
+    });
   }
 
   getDefaultTip(): Partial<Tip> {
@@ -376,6 +406,7 @@ export class TipPoolComponent implements OnInit {
     this.isEditing = false;
     this.isNewBetBuilder = false;
     this.newBBPicks = [{ market: '', pick: '' }];
+    this.filteredLeagues = this.leagues;
     this.showForm = true;
   }
 
@@ -390,6 +421,7 @@ export class TipPoolComponent implements OnInit {
       this.editingTip = { ...item.tip };
     }
     this.isNewBetBuilder = false;
+    this.filteredLeagues = this.leagues;
     this.showForm = true;
     this.onChannelSelected(false);
   }
@@ -404,6 +436,41 @@ export class TipPoolComponent implements OnInit {
         next: (sg) => this.formSubgroups = sg,
         error: (err) => console.error('Error loading form subgroups', err)
       });
+    }
+  }
+
+  getMarketOptions(marketName: string | undefined): string[] {
+    if (!marketName) return [];
+    const market = this.markets.find(m => m.name.toLowerCase() === marketName.toLowerCase());
+    return market && market.options ? market.options : [];
+  }
+
+  onSportChange() {
+    if (this.editingTip.sport) {
+      const sportLower = this.editingTip.sport.toLowerCase();
+      this.filteredLeagues = this.leagues.filter(l => l.sport?.name?.toLowerCase() === sportLower);
+    } else {
+      this.filteredLeagues = this.leagues;
+    }
+  }
+
+  onEventChange() {
+    // Auto-fill sport and league if event matches
+    const eventStr = this.editingTip.event;
+    if (eventStr) {
+      const ev = this.calendarEvents.find(e => `${e.homeTeam} vs ${e.awayTeam}` === eventStr);
+      if (ev) {
+        if (!this.editingTip.league) {
+          this.editingTip.league = ev.league?.name;
+        }
+        if (!this.editingTip.sport) {
+          this.editingTip.sport = ev.league?.sport?.name;
+        }
+        if (!this.editingTip.date) {
+          this.editingTip.date = ev.eventDate?.substring(0, 10);
+        }
+        this.onSportChange();
+      }
     }
   }
 

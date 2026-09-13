@@ -5,6 +5,8 @@ import { ActivatedRoute } from '@angular/router';
 import { TicketService, Ticket, TicketSelection, BetBuilder } from '../../services/ticket.service';
 import { TipService, Tip } from '../../services/tip.service';
 import { ChannelService, ChannelSubgroup, Channel } from '../../services/channel.service';
+import { ConfigService, Sport, League, MarketConfig } from '../../services/config.service';
+import { CalendarService, SportEvent } from '../../services/calendar.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TicketDetailModalComponent } from '../shared/ticket-detail-modal/ticket-detail-modal.component';
 
@@ -85,12 +87,20 @@ export class TicketManagerComponent implements OnInit {
 
   newTicket: Partial<Ticket> = this.getDefaultTicket();
   events: EventForm[] = [];
-  
   searchTipText: string = '';
+
+  // Config & Calendar data
+  sports: Sport[] = [];
+  leagues: League[] = [];
+  markets: MarketConfig[] = [];
+  calendarEvents: SportEvent[] = [];
+  filteredLeagues: League[] = [];
 
   private ticketService = inject(TicketService);
   private tipService = inject(TipService);
   private channelService = inject(ChannelService);
+  private configService = inject(ConfigService);
+  private calendarService = inject(CalendarService);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
 
@@ -131,6 +141,25 @@ export class TicketManagerComponent implements OnInit {
       }
       this.applyFilter();
     });
+    this.loadConfigData();
+  }
+
+  loadConfigData() {
+    this.configService.getSports().subscribe(data => this.sports = data);
+    this.configService.getLeagues().subscribe(data => {
+      this.leagues = data;
+      this.filteredLeagues = data;
+    });
+    this.configService.getMarkets().subscribe(data => this.markets = data);
+    
+    // Load events from -7 days to +14 days to have a broad range for autocomplete
+    const dStart = new Date();
+    dStart.setDate(dStart.getDate() - 7);
+    const dEnd = new Date();
+    dEnd.setDate(dEnd.getDate() + 14);
+    this.calendarService.getEvents(dStart.toISOString(), dEnd.toISOString()).subscribe(data => {
+      this.calendarEvents = data;
+    });
   }
 
   loadSubgroups() {
@@ -139,6 +168,40 @@ export class TicketManagerComponent implements OnInit {
         next: (data) => this.channelSubgroups = data,
         error: (err) => console.error('Error loading subgroups', err)
       });
+    }
+  }
+
+  getMarketOptions(marketName: string | undefined): string[] {
+    if (!marketName) return [];
+    const market = this.markets.find(m => m.name.toLowerCase() === marketName.toLowerCase());
+    return market && market.options ? market.options : [];
+  }
+
+  onSportChange(event: EventForm) {
+    if (event.sport) {
+      const sportLower = event.sport.toLowerCase();
+      this.filteredLeagues = this.leagues.filter(l => l.sport?.name?.toLowerCase() === sportLower);
+    } else {
+      this.filteredLeagues = this.leagues;
+    }
+  }
+
+  onEventChange(event: EventForm) {
+    const eventStr = event.name;
+    if (eventStr) {
+      const ev = this.calendarEvents.find(e => `${e.homeTeam} vs ${e.awayTeam}` === eventStr);
+      if (ev) {
+        if (!event.league) {
+          event.league = ev.league?.name || '';
+        }
+        if (!event.sport) {
+          event.sport = ev.league?.sport?.name || '';
+        }
+        if (event.picks.length > 0 && !event.picks[0].date) {
+          event.picks[0].date = ev.eventDate?.substring(0, 10);
+        }
+        this.onSportChange(event);
+      }
     }
   }
 
@@ -845,13 +908,13 @@ export class TicketManagerComponent implements OnInit {
   closeTicket(ticket: Ticket, result: string) {
     if (!ticket.id) return;
     
-    if (result === 'GANADA' || ticket.type === 'Simple') {
+    if (result === 'GANADA' || (ticket.type === 'Simple' && result !== 'CASHOUT')) {
       // Auto-submit para simples o ganadas completas
       this.submitCloseTicket(ticket, result, ticket.cashoutAmount || null, this.autoGenerateResults(ticket, result));
       return;
     }
     
-    // Open modal para PERDIDA o CASHOUT en combinadas/mixtas
+    // Open modal para PERDIDA o CASHOUT en combinadas/mixtas o CASHOUT en simples
     this.ticketToClose = ticket;
     this.closeResult = result;
     this.closeCashoutAmount = ticket.cashoutAmount || null;
