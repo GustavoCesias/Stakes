@@ -9,7 +9,7 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 
 @RestController
-@RequestMapping("/api/calendar")
+@RequestMapping("/api/v1/calendar")
 @CrossOrigin(origins = "*")
 public class CalendarController {
 

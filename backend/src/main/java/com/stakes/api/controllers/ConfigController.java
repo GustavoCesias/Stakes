@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/config")
+@RequestMapping("/api/v1/config")
 @CrossOrigin(origins = "*")
 public class ConfigController {
 
