@@ -177,6 +177,12 @@ export class TicketManagerComponent implements OnInit {
     return market && market.options ? market.options : [];
   }
 
+  getMarketType(marketName: string | undefined): 'OPTIONS' | 'NUMERIC' | 'TEXT' | null {
+    if (!marketName) return null;
+    const market = this.markets.find(m => m.name.toLowerCase() === marketName.toLowerCase());
+    return market ? market.inputType : null;
+  }
+
   onSportChange(event: EventForm) {
     if (event.sport) {
       const sportLower = event.sport.toLowerCase();

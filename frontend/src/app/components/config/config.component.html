@@ -1,176 +1,419 @@
-<div class="p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold text-white">Configuración</h2>
+<div class="p-6 animate-fade-in-up">
+
+  <!-- Header -->
+  <div class="mb-8">
+    <h2 class="text-2xl font-bold text-white" style="font-family:'Space Grotesk',sans-serif">Configuración</h2>
+    <p class="text-sm text-gray-400 mt-1">Gestiona los mercados, deportes y ligas de tu tracker</p>
   </div>
 
   <!-- Tabs -->
-  <div class="flex gap-4 mb-6 border-b border-gray-800 pb-2">
-    <button (click)="activeTab = 'markets'" 
-            [class.text-emerald-400]="activeTab === 'markets'" 
-            [class.border-emerald-400]="activeTab === 'markets'"
-            class="px-4 py-2 font-medium text-gray-400 hover:text-white border-b-2 border-transparent transition-colors">
-      Mercados
+  <div class="flex gap-1 mb-8 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] w-fit">
+    <button (click)="activeTab = 'markets'"
+            [class.tab-active]="activeTab === 'markets'"
+            class="tab-btn px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+      <span class="flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Mercados
+      </span>
     </button>
-    <button (click)="activeTab = 'sports'" 
-            [class.text-emerald-400]="activeTab === 'sports'" 
-            [class.border-emerald-400]="activeTab === 'sports'"
-            class="px-4 py-2 font-medium text-gray-400 hover:text-white border-b-2 border-transparent transition-colors">
-      Deportes
+    <button (click)="activeTab = 'sports'"
+            [class.tab-active]="activeTab === 'sports'"
+            class="tab-btn px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+      <span class="flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14.121 14.121L19 19m-7-7l7-7M5 5l7 7M5 19l7-7"/>
+        </svg>
+        Deportes
+      </span>
     </button>
-    <button (click)="activeTab = 'leagues'" 
-            [class.text-emerald-400]="activeTab === 'leagues'" 
-            [class.border-emerald-400]="activeTab === 'leagues'"
-            class="px-4 py-2 font-medium text-gray-400 hover:text-white border-b-2 border-transparent transition-colors">
-      Ligas
+    <button (click)="activeTab = 'leagues'"
+            [class.tab-active]="activeTab === 'leagues'"
+            class="tab-btn px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+      <span class="flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H12.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+        </svg>
+        Ligas
+      </span>
     </button>
   </div>
 
-  <!-- Tab: Markets -->
-  <div *ngIf="activeTab === 'markets'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- ═══════════════════════ TAB: MERCADOS ═══════════════════════ -->
+  <div *ngIf="activeTab === 'markets'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+
     <!-- Form -->
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 h-fit">
-      <h3 class="text-lg font-medium text-white mb-4">Crear Nuevo Mercado</h3>
-      
-      <div class="space-y-4">
+    <div class="glass rounded-2xl p-6 h-fit border border-white/[0.06]">
+      <!-- Card header -->
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-1 h-6 rounded-full bg-gradient-to-b from-emerald-400 to-teal-600"></div>
+        <h3 class="text-base font-semibold text-white" style="font-family:'Space Grotesk',sans-serif">Nuevo Mercado</h3>
+      </div>
+
+      <div class="space-y-5">
+
+        <!-- Nombre -->
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Nombre (ej. Goles Totales)</label>
-          <input type="text" [(ngModel)]="newMarket.name" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
-        </div>
-        
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">Tipo de Respuesta</label>
-          <select [(ngModel)]="newMarket.inputType" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
-            <option value="NUMERIC">Numérico (ej. 2.5)</option>
-            <option value="OPTIONS">Opciones Múltiples (Botones)</option>
-            <option value="TEXT">Texto Libre</option>
-          </select>
+          <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Nombre del mercado</label>
+          <input type="text"
+                 [(ngModel)]="newMarket.name"
+                 placeholder="Ej. Resultado 1X2"
+                 class="cfg-input w-full">
         </div>
 
-        <div *ngIf="newMarket.inputType === 'OPTIONS'" class="p-4 bg-gray-900 rounded-lg border border-gray-700 space-y-3">
-          <label class="block text-sm text-gray-400">Opciones (Añade una por una)</label>
+        <!-- Tipo de respuesta -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Tipo de respuesta</label>
+          <div class="flex gap-2 p-1 bg-white/[0.03] rounded-xl border border-white/[0.05]">
+            <button (click)="newMarket.inputType = 'OPTIONS'"
+                    [class.type-active]="newMarket.inputType === 'OPTIONS'"
+                    class="type-btn flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200">
+              <span class="flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6h16M4 12h8m-8 6h16"/>
+                </svg>
+                Opciones
+              </span>
+            </button>
+            <button (click)="newMarket.inputType = 'NUMERIC'"
+                    [class.type-active]="newMarket.inputType === 'NUMERIC'"
+                    class="type-btn flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200">
+              <span class="flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+                </svg>
+                Numérico
+              </span>
+            </button>
+            <button (click)="newMarket.inputType = 'TEXT'"
+                    [class.type-active]="newMarket.inputType === 'TEXT'"
+                    class="type-btn flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200">
+              <span class="flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                </svg>
+                Texto
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Selecciones (solo si OPTIONS) -->
+        <div *ngIf="newMarket.inputType === 'OPTIONS'"
+             class="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4 space-y-3 animate-scale-in">
+          <label class="block text-xs font-medium text-emerald-400/80 uppercase tracking-wider">Selecciones</label>
           <div class="flex gap-2">
-            <input type="text" [(ngModel)]="newMarketOption" (keyup.enter)="addMarketOption()" placeholder="Ej. Local" class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white outline-none focus:border-emerald-500">
-            <button (click)="addMarketOption()" class="px-3 py-1.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">Añadir</button>
+            <input type="text"
+                   [(ngModel)]="newMarketOption"
+                   (keyup.enter)="addMarketOption()"
+                   placeholder="Añadir selección..."
+                   class="cfg-input flex-1 text-sm">
+            <button (click)="addMarketOption()"
+                    class="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white transition-colors shadow-lg shadow-emerald-900/30 flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+              </svg>
+            </button>
           </div>
-          <div class="flex flex-wrap gap-2 mt-2">
-            <span *ngFor="let opt of newMarket.options; let i = index" class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-sm flex items-center gap-2 border border-emerald-500/30">
+
+          <!-- Chips -->
+          <div class="flex flex-wrap gap-2 min-h-[32px]">
+            <span *ngFor="let opt of newMarket.options; let i = index"
+                  class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full
+                         bg-emerald-500/15 text-emerald-300 text-sm border border-emerald-500/25
+                         animate-scale-in">
               {{opt}}
-              <button (click)="removeMarketOption(i)" class="text-emerald-400 hover:text-emerald-300 font-bold">&times;</button>
+              <button (click)="removeMarketOption(i)"
+                      class="w-4 h-4 rounded-full flex items-center justify-center
+                             hover:bg-emerald-400/30 text-emerald-400 hover:text-white transition-colors">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
             </span>
-            <span *ngIf="!newMarket.options?.length" class="text-sm text-gray-500 italic">No has añadido opciones.</span>
+            <span *ngIf="!newMarket.options?.length"
+                  class="text-xs text-gray-500 italic flex items-center">
+              Añade las opciones del mercado...
+            </span>
           </div>
         </div>
 
-        <button (click)="addMarket()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded-lg transition-colors mt-2">
+        <!-- Save button -->
+        <button (click)="addMarket()"
+                [disabled]="!newMarket.name || !newMarket.inputType"
+                class="w-full py-2.5 rounded-xl font-semibold text-sm text-white
+                       bg-gradient-to-r from-emerald-500 to-teal-600
+                       hover:from-emerald-400 hover:to-teal-500
+                       disabled:opacity-40 disabled:cursor-not-allowed
+                       shadow-lg shadow-emerald-900/30
+                       transition-all duration-200 active:scale-[0.98]">
           Guardar Mercado
         </button>
       </div>
     </div>
 
     <!-- List -->
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
-      <h3 class="text-lg font-medium text-white mb-4">Mercados Guardados</h3>
-      <div class="space-y-3">
-        <div *ngFor="let market of markets" class="bg-gray-900 border border-gray-700 rounded-lg p-3 flex justify-between items-center group">
-          <div>
-            <div class="text-white font-medium">{{market.name}}</div>
-            <div class="text-sm text-gray-400 flex gap-2 items-center mt-1">
-              <span class="px-2 py-0.5 bg-gray-800 rounded text-xs border border-gray-700">{{market.inputType}}</span>
-              <span *ngIf="market.inputType === 'OPTIONS'" class="text-xs text-gray-500 truncate max-w-[150px]">
-                {{market.options.join(', ')}}
-              </span>
-            </div>
-          </div>
-          <button (click)="deleteMarket(market.id!)" class="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-            <i class="fas fa-trash"></i>
-          </button>
+    <div class="glass rounded-2xl p-6 border border-white/[0.06]">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-1 h-6 rounded-full bg-gradient-to-b from-blue-400 to-indigo-600"></div>
+          <h3 class="text-base font-semibold text-white" style="font-family:'Space Grotesk',sans-serif">Mercados guardados</h3>
         </div>
-        <div *ngIf="markets.length === 0" class="text-center py-8 text-gray-500">
-          No hay mercados configurados.
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/[0.06] text-gray-400 border border-white/[0.06]">
+          {{markets.length}}
+        </span>
+      </div>
+
+      <div class="space-y-3 max-h-[480px] overflow-y-auto custom-scrollbar pr-1">
+        <div *ngFor="let market of markets"
+             class="group relative bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06]
+                    rounded-xl p-4 transition-all duration-200 cursor-default">
+          <!-- Left accent -->
+          <div class="absolute left-0 top-4 bottom-4 w-0.5 rounded-r-full"
+               [class.bg-emerald-500]="market.inputType === 'OPTIONS'"
+               [class.bg-blue-500]="market.inputType === 'NUMERIC'"
+               [class.bg-purple-500]="market.inputType === 'TEXT'">
+          </div>
+
+          <div class="flex items-start justify-between gap-3 pl-2">
+            <div class="flex-1 min-w-0">
+              <div class="text-white font-medium text-sm">{{market.name}}</div>
+              <div class="flex items-center flex-wrap gap-2 mt-2">
+                <!-- Type badge -->
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider"
+                      [class.type-badge-options]="market.inputType === 'OPTIONS'"
+                      [class.type-badge-numeric]="market.inputType === 'NUMERIC'"
+                      [class.type-badge-text]="market.inputType === 'TEXT'">
+                  {{market.inputType === 'OPTIONS' ? 'Opciones' : market.inputType === 'NUMERIC' ? 'Numérico' : 'Texto'}}
+                </span>
+                <!-- Option chips -->
+                <ng-container *ngIf="market.inputType === 'OPTIONS' && market.options?.length">
+                  <span class="text-gray-500 text-xs">·</span>
+                  <span *ngFor="let opt of market.options" class="text-xs text-gray-400">{{opt}}</span>
+                </ng-container>
+              </div>
+            </div>
+
+            <!-- Delete -->
+            <button (click)="deleteMarket(market.id!)"
+                    class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg
+                           text-gray-500 hover:text-red-400 hover:bg-red-400/10
+                           transition-all duration-150 flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="markets.length === 0"
+             class="flex flex-col items-center justify-center py-14 text-center">
+          <div class="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-3">
+            <svg class="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+          </div>
+          <p class="text-gray-500 text-sm">No hay mercados configurados</p>
+          <p class="text-gray-600 text-xs mt-1">Crea tu primer mercado desde el formulario</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Tab: Sports -->
-  <div *ngIf="activeTab === 'sports'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- ═══════════════════════ TAB: DEPORTES ═══════════════════════ -->
+  <div *ngIf="activeTab === 'sports'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+
     <!-- Form -->
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 h-fit">
-      <h3 class="text-lg font-medium text-white mb-4">Añadir Deporte</h3>
-      <div class="space-y-4">
+    <div class="glass rounded-2xl p-6 h-fit border border-white/[0.06]">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-1 h-6 rounded-full bg-gradient-to-b from-emerald-400 to-teal-600"></div>
+        <h3 class="text-base font-semibold text-white" style="font-family:'Space Grotesk',sans-serif">Nuevo Deporte</h3>
+      </div>
+
+      <div class="space-y-5">
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Nombre del Deporte</label>
-          <input type="text" [(ngModel)]="newSport.name" placeholder="Ej. Fútbol" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+          <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Nombre del deporte</label>
+          <input type="text"
+                 [(ngModel)]="newSport.name"
+                 placeholder="Ej. Fútbol"
+                 class="cfg-input w-full">
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Icono / Emoji (Opcional)</label>
-          <input type="text" [(ngModel)]="newSport.icon" placeholder="Ej. ⚽" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+          <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Icono / Emoji <span class="text-gray-600 normal-case">(opcional)</span></label>
+          <input type="text"
+                 [(ngModel)]="newSport.icon"
+                 placeholder="Ej. ⚽"
+                 class="cfg-input w-full">
         </div>
-        <button (click)="addSport()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded-lg transition-colors mt-2">
+        <button (click)="addSport()"
+                [disabled]="!newSport.name"
+                class="w-full py-2.5 rounded-xl font-semibold text-sm text-white
+                       bg-gradient-to-r from-emerald-500 to-teal-600
+                       hover:from-emerald-400 hover:to-teal-500
+                       disabled:opacity-40 disabled:cursor-not-allowed
+                       shadow-lg shadow-emerald-900/30
+                       transition-all duration-200 active:scale-[0.98]">
           Guardar Deporte
         </button>
       </div>
     </div>
-    
+
     <!-- List -->
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
-      <h3 class="text-lg font-medium text-white mb-4">Deportes Registrados</h3>
+    <div class="glass rounded-2xl p-6 border border-white/[0.06]">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-1 h-6 rounded-full bg-gradient-to-b from-blue-400 to-indigo-600"></div>
+          <h3 class="text-base font-semibold text-white" style="font-family:'Space Grotesk',sans-serif">Deportes registrados</h3>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/[0.06] text-gray-400 border border-white/[0.06]">
+          {{sports.length}}
+        </span>
+      </div>
+
       <div class="grid grid-cols-2 gap-3">
-        <div *ngFor="let sport of sports" class="bg-gray-900 border border-gray-700 rounded-lg p-3 flex justify-between items-center group">
-          <div class="text-white font-medium flex items-center gap-2">
-            <span *ngIf="sport.icon">{{sport.icon}}</span>
-            {{sport.name}}
+        <div *ngFor="let sport of sports"
+             class="group bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06]
+                    rounded-xl p-3.5 flex items-center justify-between
+                    transition-all duration-200">
+          <div class="flex items-center gap-2.5">
+            <span *ngIf="sport.icon" class="text-xl leading-none">{{sport.icon}}</span>
+            <span *ngIf="!sport.icon"
+                  class="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center text-gray-500 text-xs font-bold">
+              {{sport.name.charAt(0).toUpperCase()}}
+            </span>
+            <span class="text-white text-sm font-medium">{{sport.name}}</span>
           </div>
-          <button (click)="deleteSport(sport.id!)" class="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-            <i class="fas fa-trash"></i>
+          <button (click)="deleteSport(sport.id!)"
+                  class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg
+                         text-gray-500 hover:text-red-400 hover:bg-red-400/10
+                         transition-all duration-150">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
           </button>
+        </div>
+
+        <div *ngIf="sports.length === 0"
+             class="col-span-2 flex flex-col items-center justify-center py-14 text-center">
+          <div class="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-3">
+            <svg class="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke-width="1.5"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3"/>
+            </svg>
+          </div>
+          <p class="text-gray-500 text-sm">No hay deportes registrados</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Tab: Leagues -->
-  <div *ngIf="activeTab === 'leagues'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- ═══════════════════════ TAB: LIGAS ═══════════════════════ -->
+  <div *ngIf="activeTab === 'leagues'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+
     <!-- Form -->
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5 h-fit">
-      <h3 class="text-lg font-medium text-white mb-4">Añadir Liga / Competición</h3>
-      <div class="space-y-4">
+    <div class="glass rounded-2xl p-6 h-fit border border-white/[0.06]">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-1 h-6 rounded-full bg-gradient-to-b from-emerald-400 to-teal-600"></div>
+        <h3 class="text-base font-semibold text-white" style="font-family:'Space Grotesk',sans-serif">Nueva Liga</h3>
+      </div>
+
+      <div class="space-y-5">
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Deporte</label>
-          <select [(ngModel)]="newLeague.sport" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
-            <option [ngValue]="undefined">Selecciona un deporte</option>
+          <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Deporte</label>
+          <select [(ngModel)]="newLeague.sport"
+                  class="cfg-input w-full">
+            <option [ngValue]="undefined" disabled>Selecciona un deporte</option>
             <option *ngFor="let sport of sports" [ngValue]="sport">{{sport.icon}} {{sport.name}}</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Nombre de la Liga</label>
-          <input type="text" [(ngModel)]="newLeague.name" placeholder="Ej. Premier League" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+          <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Nombre de la liga</label>
+          <input type="text"
+                 [(ngModel)]="newLeague.name"
+                 placeholder="Ej. Premier League"
+                 class="cfg-input w-full">
         </div>
         <div>
-          <label class="block text-sm text-gray-400 mb-1">País / Región (Opcional)</label>
-          <input type="text" [(ngModel)]="newLeague.country" placeholder="Ej. Inglaterra" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
+          <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">País / Región <span class="text-gray-600 normal-case">(opcional)</span></label>
+          <input type="text"
+                 [(ngModel)]="newLeague.country"
+                 placeholder="Ej. Inglaterra"
+                 class="cfg-input w-full">
         </div>
-        <button (click)="addLeague()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded-lg transition-colors mt-2" [disabled]="!newLeague.sport || !newLeague.name">
+        <button (click)="addLeague()"
+                [disabled]="!newLeague.sport || !newLeague.name"
+                class="w-full py-2.5 rounded-xl font-semibold text-sm text-white
+                       bg-gradient-to-r from-emerald-500 to-teal-600
+                       hover:from-emerald-400 hover:to-teal-500
+                       disabled:opacity-40 disabled:cursor-not-allowed
+                       shadow-lg shadow-emerald-900/30
+                       transition-all duration-200 active:scale-[0.98]">
           Guardar Liga
         </button>
       </div>
     </div>
-    
+
     <!-- List -->
-    <div class="bg-gray-800 rounded-xl border border-gray-700 p-5">
-      <h3 class="text-lg font-medium text-white mb-4">Ligas Registradas</h3>
-      <div class="space-y-3">
-        <div *ngFor="let league of leagues" class="bg-gray-900 border border-gray-700 rounded-lg p-3 flex justify-between items-center group">
-          <div>
-            <div class="text-white font-medium">{{league.name}}</div>
-            <div class="text-sm text-gray-400 flex gap-2 items-center mt-1">
-              <span class="text-emerald-400/80">{{league.sport.name}}</span>
-              <span *ngIf="league.country" class="px-2 py-0.5 bg-gray-800 rounded text-xs border border-gray-700">{{league.country}}</span>
+    <div class="glass rounded-2xl p-6 border border-white/[0.06]">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-1 h-6 rounded-full bg-gradient-to-b from-blue-400 to-indigo-600"></div>
+          <h3 class="text-base font-semibold text-white" style="font-family:'Space Grotesk',sans-serif">Ligas registradas</h3>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/[0.06] text-gray-400 border border-white/[0.06]">
+          {{leagues.length}}
+        </span>
+      </div>
+
+      <div class="space-y-3 max-h-[480px] overflow-y-auto custom-scrollbar pr-1">
+        <div *ngFor="let league of leagues"
+             class="group bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06]
+                    rounded-xl p-4 flex items-center justify-between
+                    transition-all duration-200">
+          <div class="flex items-center gap-3">
+            <span *ngIf="league.sport.icon" class="text-xl leading-none">{{league.sport.icon}}</span>
+            <div>
+              <div class="text-white text-sm font-medium">{{league.name}}</div>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-xs text-emerald-400/70">{{league.sport.name}}</span>
+                <span *ngIf="league.country"
+                      class="px-1.5 py-0.5 rounded text-[10px] text-gray-500 bg-white/[0.04] border border-white/[0.05]">
+                  {{league.country}}
+                </span>
+              </div>
             </div>
           </div>
-          <button (click)="deleteLeague(league.id!)" class="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-            <i class="fas fa-trash"></i>
+          <button (click)="deleteLeague(league.id!)"
+                  class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg
+                         text-gray-500 hover:text-red-400 hover:bg-red-400/10
+                         transition-all duration-150">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
           </button>
+        </div>
+
+        <div *ngIf="leagues.length === 0"
+             class="flex flex-col items-center justify-center py-14 text-center">
+          <div class="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-3">
+            <svg class="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H12.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+            </svg>
+          </div>
+          <p class="text-gray-500 text-sm">No hay ligas registradas</p>
         </div>
       </div>
     </div>
