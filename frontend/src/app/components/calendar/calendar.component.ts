@@ -4,6 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { CalendarService, SportEvent } from '../../services/calendar.service';
 import { ConfigService, League, Sport } from '../../services/config.service';
 
+interface LeagueGroup {
+  leagueName: string;
+  icon: string;
+  events: SportEvent[];
+}
+
+interface DayGroup {
+  dateStr: string;
+  displayDate: string;
+  leagues: LeagueGroup[];
+}
+
 @Component({
   selector: 'app-calendar',
   standalone: true,
@@ -16,6 +28,7 @@ export class CalendarComponent implements OnInit {
   configService = inject(ConfigService);
 
   events: SportEvent[] = [];
+  groupedEvents: DayGroup[] = [];
   leagues: League[] = [];
   sports: Sport[] = [];
 
@@ -55,7 +68,44 @@ export class CalendarComponent implements OnInit {
   loadData() {
     this.calendarService.getEvents(this.weekStart, this.weekEnd, this.selectedLeagueId).subscribe(data => {
       this.events = data;
+      this.groupEvents();
     });
+  }
+
+  groupEvents() {
+    // 1. Group by day (YYYY-MM-DD)
+    const byDay = new Map<string, SportEvent[]>();
+    for (const e of this.events) {
+       const day = e.eventDate.substring(0, 10);
+       if (!byDay.has(day)) byDay.set(day, []);
+       byDay.get(day)!.push(e);
+    }
+    
+    // 2. For each day, group by league
+    this.groupedEvents = Array.from(byDay.entries()).map(([dateStr, dayEvents]) => {
+        // Build a display date
+        const d = new Date(dateStr + 'T12:00:00'); // avoid timezone shifts
+        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const displayDate = `${days[d.getDay()]} ${d.getDate()} de ${months[d.getMonth()]}`;
+        
+        const byLeague = new Map<string, { icon: string, events: SportEvent[] }>();
+        for (const e of dayEvents) {
+            const lName = e.league?.name || 'Desconocida';
+            const icon = e.league?.sport?.icon || '⚽';
+            
+            if (!byLeague.has(lName)) byLeague.set(lName, { icon, events: [] });
+            byLeague.get(lName)!.events.push(e);
+        }
+        
+        const leagues = Array.from(byLeague.entries()).map(([leagueName, data]) => ({
+            leagueName,
+            icon: data.icon,
+            events: data.events
+        })).sort((a,b) => a.leagueName.localeCompare(b.leagueName));
+        
+        return { dateStr, displayDate, leagues };
+    }).sort((a,b) => a.dateStr.localeCompare(b.dateStr));
   }
 
   changeWeek(offset: number) {
