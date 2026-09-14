@@ -166,7 +166,7 @@
             <div class="text-base font-bold text-white">{{pick.pick}}</div>
           </div>
           <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-            <div class="text-lg font-bold text-emerald-400">@{{pick.odds}}</div>
+            <div class="text-lg font-bold text-emerald-400">&#64;{{pick.odds}}</div>
             
             <span *ngIf="pick.result === 'PENDIENTE'" class="px-3 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-lg text-sm font-medium">Pendiente</span>
             <span *ngIf="pick.result === 'GANADA'" class="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg text-sm font-medium">Ganada</span>
