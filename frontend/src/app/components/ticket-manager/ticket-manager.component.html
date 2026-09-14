@@ -682,16 +682,19 @@
                     <div class="flex items-center gap-3">
                       <span class="text-gray-600 font-bold text-xs w-4 text-center flex-shrink-0">{{ j + 1 }}</span>
 
-                      <!-- Mercado: select desde config -->
+                      <!-- Mercado: input con datalist desde config -->
                       <div class="flex-1">
-                        <select [(ngModel)]="pick.market"
-                                name="market_{{i}}_{{j}}"
-                                (ngModelChange)="pick.pick = ''"
-                                class="w-full bg-slate-900/80 border border-white/10 rounded-lg text-white px-2 py-1.5 text-sm focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 outline-none transition-all cursor-pointer appearance-none"
-                                required>
-                          <option value="" disabled>— Mercado —</option>
-                          <option *ngFor="let m of markets" [value]="m.name">{{ m.name }}</option>
-                        </select>
+                        <input type="text"
+                               [(ngModel)]="pick.market"
+                               name="market_{{i}}_{{j}}"
+                               list="markets_list_{{i}}_{{j}}"
+                               (ngModelChange)="pick.pick = ''"
+                               placeholder="Mercado"
+                               class="w-full bg-slate-900/80 border border-white/10 rounded-lg text-white px-2 py-1.5 text-sm focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 outline-none transition-all"
+                               required>
+                        <datalist id="markets_list_{{i}}_{{j}}">
+                          <option *ngFor="let m of getMarketsForSport(event.sport)" [value]="m.name">{{ m.name }}</option>
+                        </datalist>
                       </div>
 
                       <div class="w-px h-6 bg-white/10 flex-shrink-0"></div>

@@ -177,10 +177,17 @@ export class TicketManagerComponent implements OnInit {
     return market && market.options ? market.options : [];
   }
 
+  getMarketsForSport(sportName: string | undefined): MarketConfig[] {
+    if (!sportName) return this.markets;
+    const sportLower = sportName.toLowerCase();
+    // Return markets that either have no sport (global) or match the selected sport
+    return this.markets.filter(m => !m.sport || m.sport.name.toLowerCase() === sportLower);
+  }
+
   getMarketType(marketName: string | undefined): 'OPTIONS' | 'NUMERIC' | 'TEXT' | null {
     if (!marketName) return null;
     const market = this.markets.find(m => m.name.toLowerCase() === marketName.toLowerCase());
-    return market ? market.inputType : null;
+    return market ? market.inputType : 'TEXT';
   }
 
   onSportChange(event: EventForm) {
