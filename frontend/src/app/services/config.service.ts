@@ -21,6 +21,7 @@ export interface MarketConfig {
   name: string;
   inputType: 'NUMERIC' | 'OPTIONS' | 'TEXT';
   options: string[];
+  sport?: Sport;
 }
 
 @Injectable({

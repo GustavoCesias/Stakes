@@ -26,4 +26,8 @@ public class MarketConfig {
     @CollectionTable(name = "market_options", joinColumns = @JoinColumn(name = "market_id"))
     @Column(name = "option_value")
     private List<String> options; // e.g. ["Local", "Empate", "Visita"] for OPTIONS type
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "sport_id", nullable = true)
+    private Sport sport; // optional: scope market to a sport
 }

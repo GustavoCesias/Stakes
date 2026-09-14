@@ -44,6 +44,15 @@
   </div>
 
   <!-- ═══════════════════════ TAB: MERCADOS ═══════════════════════ -->
+  <!-- Error banner -->
+  <div *ngIf="errorMsg"
+       class="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm animate-scale-in">
+    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    {{ errorMsg }}
+  </div>
+
   <div *ngIf="activeTab === 'markets'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
 
     <!-- Form -->
@@ -63,6 +72,16 @@
                  [(ngModel)]="newMarket.name"
                  placeholder="Ej. Resultado 1X2"
                  class="cfg-input w-full">
+        </div>
+
+        <!-- Deporte (opcional) -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Deporte <span class="text-gray-600 normal-case">(opcional)</span></label>
+          <select [(ngModel)]="newMarket.sport"
+                  class="cfg-input w-full">
+            <option [ngValue]="undefined">— Todos los deportes —</option>
+            <option *ngFor="let sport of sports" [ngValue]="sport">{{sport.icon}} {{sport.name}}</option>
+          </select>
         </div>
 
         <!-- Tipo de respuesta -->
@@ -147,14 +166,19 @@
 
         <!-- Save button -->
         <button (click)="addMarket()"
-                [disabled]="!newMarket.name || !newMarket.inputType"
+                [disabled]="!newMarket.name || !newMarket.inputType || savingMarket"
                 class="w-full py-2.5 rounded-xl font-semibold text-sm text-white
                        bg-gradient-to-r from-emerald-500 to-teal-600
                        hover:from-emerald-400 hover:to-teal-500
                        disabled:opacity-40 disabled:cursor-not-allowed
                        shadow-lg shadow-emerald-900/30
-                       transition-all duration-200 active:scale-[0.98]">
-          Guardar Mercado
+                       transition-all duration-200 active:scale-[0.98]
+                       flex items-center justify-center gap-2">
+          <svg *ngIf="savingMarket" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          {{ savingMarket ? 'Guardando...' : 'Guardar Mercado' }}
         </button>
       </div>
     </div>
@@ -186,6 +210,12 @@
             <div class="flex-1 min-w-0">
               <div class="text-white font-medium text-sm">{{market.name}}</div>
               <div class="flex items-center flex-wrap gap-2 mt-2">
+                <!-- Sport badge -->
+                <span *ngIf="market.sport"
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/[0.06] text-gray-400 border border-white/[0.06]">
+                  <span *ngIf="market.sport.icon">{{market.sport.icon}}</span>
+                  {{market.sport.name}}
+                </span>
                 <!-- Type badge -->
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider"
                       [class.type-badge-options]="market.inputType === 'OPTIONS'"
