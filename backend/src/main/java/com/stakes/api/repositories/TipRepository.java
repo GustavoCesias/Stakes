@@ -16,6 +16,10 @@ public interface TipRepository extends JpaRepository<Tip, Long> {
 
     List<Tip> findByChannelId(Long channelId);
 
+    List<Tip> findByLeague(String league);
+    List<Tip> findBySport(String sport);
+    List<Tip> findByMarket(String market);
+
     @Modifying
     @Query("UPDATE Tip t SET t.channel = null WHERE t.channel.id = :channelId")
     void nullifyChannelId(@Param("channelId") Long channelId);

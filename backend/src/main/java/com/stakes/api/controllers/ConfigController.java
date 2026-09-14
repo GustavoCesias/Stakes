@@ -129,10 +129,27 @@ public class ConfigController {
     @PutMapping("/leagues/{id}")
     public League updateLeague(@PathVariable Long id, @RequestBody League leagueDetails) {
         League league = leagueRepository.findById(id).orElseThrow(() -> new RuntimeException("League not found"));
-        league.setName(leagueDetails.getName());
+        
+        String oldName = league.getName();
+        String newName = leagueDetails.getName();
+        
+        league.setName(newName);
         league.setCountry(leagueDetails.getCountry());
         league.setSport(leagueDetails.getSport());
-        return leagueRepository.save(league);
+        
+        League savedLeague = leagueRepository.save(league);
+        
+        if (oldName != null && newName != null && !oldName.equals(newName)) {
+            List<com.stakes.api.models.Tip> tips = tipRepository.findByLeague(oldName);
+            for (com.stakes.api.models.Tip t : tips) {
+                t.setLeague(newName);
+            }
+            if (!tips.isEmpty()) {
+                tipRepository.saveAll(tips);
+            }
+        }
+        
+        return savedLeague;
     }
 
     @DeleteMapping("/leagues/{id}")
