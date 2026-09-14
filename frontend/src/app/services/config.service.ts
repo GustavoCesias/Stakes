@@ -53,6 +53,10 @@ export class ConfigService {
     return this.http.post<League>(`${this.apiUrl}/leagues`, league);
   }
 
+  updateLeague(id: number, league: League): Observable<League> {
+    return this.http.put<League>(`${this.apiUrl}/leagues/${id}`, league);
+  }
+
   deleteLeague(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/leagues/${id}`);
   }

@@ -126,6 +126,15 @@ public class ConfigController {
         return leagueRepository.save(league);
     }
 
+    @PutMapping("/leagues/{id}")
+    public League updateLeague(@PathVariable Long id, @RequestBody League leagueDetails) {
+        League league = leagueRepository.findById(id).orElseThrow(() -> new RuntimeException("League not found"));
+        league.setName(leagueDetails.getName());
+        league.setCountry(leagueDetails.getCountry());
+        league.setSport(leagueDetails.getSport());
+        return leagueRepository.save(league);
+    }
+
     @DeleteMapping("/leagues/{id}")
     public void deleteLeague(@PathVariable Long id) {
         leagueRepository.deleteById(id);

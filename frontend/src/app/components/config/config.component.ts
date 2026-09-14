@@ -66,21 +66,52 @@ export class ConfigComponent implements OnInit {
   }
 
   // --- Leagues ---
-  addLeague() {
+  editLeague(league: League) {
+    this.newLeague = { ...league };
+    // We need to match the sport reference correctly for the select binding
+    const sportRef = this.sports.find(s => s.id === league.sport?.id);
+    if (sportRef) {
+      this.newLeague.sport = sportRef;
+    }
+  }
+
+  cancelEditLeague() {
+    this.newLeague = {};
+  }
+
+  saveLeague() {
     if (!this.newLeague.name || !this.newLeague.sport) return;
     this.savingLeague = true;
-    this.configService.createLeague(this.newLeague as League).subscribe({
-      next: () => {
-        this.newLeague = {};
-        this.savingLeague = false;
-        this.loadData();
-      },
-      error: (err) => {
-        this.savingLeague = false;
-        this.errorMsg = err?.error?.message || 'Error al guardar la liga.';
-        setTimeout(() => this.errorMsg = null, 4000);
-      }
-    });
+    
+    if (this.newLeague.id) {
+      // Update
+      this.configService.updateLeague(this.newLeague.id, this.newLeague as League).subscribe({
+        next: () => {
+          this.newLeague = {};
+          this.savingLeague = false;
+          this.loadData();
+        },
+        error: (err) => {
+          this.savingLeague = false;
+          this.errorMsg = err?.error?.message || 'Error al actualizar la liga.';
+          setTimeout(() => this.errorMsg = null, 4000);
+        }
+      });
+    } else {
+      // Create
+      this.configService.createLeague(this.newLeague as League).subscribe({
+        next: () => {
+          this.newLeague = {};
+          this.savingLeague = false;
+          this.loadData();
+        },
+        error: (err) => {
+          this.savingLeague = false;
+          this.errorMsg = err?.error?.message || 'Error al guardar la liga.';
+          setTimeout(() => this.errorMsg = null, 4000);
+        }
+      });
+    }
   }
 
   deleteLeague(id: number) {
