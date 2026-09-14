@@ -45,7 +45,8 @@ export class CalendarComponent implements OnInit {
 
   // Picks Modal state
   showPicksModal = false;
-  selectedPicks: any[] = [];
+  selectedPicks: any[] = []; // keeping this just in case, but will use groups mostly
+  selectedPicksGroups: any[] = [];
   selectedPicksEventName = '';
 
   constructor() {
@@ -162,11 +163,40 @@ export class CalendarComponent implements OnInit {
 
   viewPicks(event: SportEvent) {
     this.selectedPicksEventName = `${event.homeTeam} vs ${event.awayTeam}`;
-    this.selectedPicks = [];
+    this.selectedPicksGroups = [];
     this.showPicksModal = true;
     
     this.calendarService.getTipsForEvent(event.eventDate, event.homeTeam, event.awayTeam).subscribe(tips => {
-      this.selectedPicks = tips;
+      const groupsMap = new Map<string, any[]>();
+      const loosePicks: any[] = [];
+      
+      for (const tip of tips) {
+        if (tip.event && tip.event.toUpperCase().includes('(BB')) {
+          if (!groupsMap.has(tip.event)) groupsMap.set(tip.event, []);
+          groupsMap.get(tip.event)!.push(tip);
+        } else {
+          loosePicks.push(tip);
+        }
+      }
+      
+      this.selectedPicksGroups = Array.from(groupsMap.entries()).map(([name, groupTips]) => {
+        // Try to find the total odds from the subgroup if it exists, otherwise leave empty
+        // The subgroup (ChannelSubgroup) itself doesn't have odds, but we can just say "Bet Builder"
+        // and hide the individual odds if they are null.
+        return {
+          isBetBuilder: true,
+          name: name.includes('(BB1)') ? 'Bet Builder 1' : name.includes('(BB2)') ? 'Bet Builder 2' : name.includes('(BB3)') ? 'Bet Builder 3' : 'Bet Builder',
+          picks: groupTips
+        };
+      });
+      
+      if (loosePicks.length > 0) {
+        this.selectedPicksGroups.push({
+          isBetBuilder: false,
+          name: 'Picks Individuales',
+          picks: loosePicks
+        });
+      }
     });
   }
 }
