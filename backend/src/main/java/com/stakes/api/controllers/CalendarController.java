@@ -91,13 +91,31 @@ public class CalendarController {
             CalendarEventDto dto = new CalendarEventDto();
             dto.setId(null); // No ID for old tips, so they can't be deleted via calendar
             
-            String[] teams = tip.getEvent().split(" vs ");
+            String[] teams = tip.getEvent().split("(?i)\\s+vs\\s+");
             if (teams.length >= 2) {
                 dto.setHomeTeam(teams[0].trim());
                 dto.setAwayTeam(teams[1].trim());
             } else {
-                dto.setHomeTeam(tip.getEvent());
-                dto.setAwayTeam("");
+                teams = tip.getEvent().split("\\s*-\\s*");
+                if (teams.length >= 2) {
+                    dto.setHomeTeam(teams[0].trim());
+                    String away = teams[1].trim();
+                    if (away.toUpperCase().endsWith(" VS")) {
+                        away = away.substring(0, away.length() - 3).trim();
+                    } else if (away.toUpperCase().endsWith("VS")) {
+                        away = away.substring(0, away.length() - 2).trim();
+                    }
+                    dto.setAwayTeam(away);
+                } else {
+                    String eventStr = tip.getEvent().trim();
+                    if (eventStr.toUpperCase().endsWith(" VS")) {
+                        eventStr = eventStr.substring(0, eventStr.length() - 3).trim();
+                    } else if (eventStr.toUpperCase().endsWith("VS")) {
+                        eventStr = eventStr.substring(0, eventStr.length() - 2).trim();
+                    }
+                    dto.setHomeTeam(eventStr);
+                    dto.setAwayTeam("");
+                }
             }
             
             // Set time to 00:00 for old tips since they only have LocalDate
