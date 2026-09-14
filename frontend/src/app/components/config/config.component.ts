@@ -84,8 +84,23 @@ export class ConfigComponent implements OnInit {
   }
 
   deleteLeague(id: number) {
-    if (confirm('¿Eliminar liga?')) {
+    if (confirm('¿Eliminar esta liga?')) {
       this.configService.deleteLeague(id).subscribe(() => this.loadData());
+    }
+  }
+
+  migrateLegacy() {
+    if (confirm('¿Migrar datos antiguos? Esto buscará deportes, ligas y mercados de tus tickets pasados y los añadirá a esta configuración.')) {
+      this.configService.migrateLegacyData().subscribe({
+        next: () => {
+          alert('Datos migrados exitosamente');
+          this.loadData();
+        },
+        error: (err) => {
+          console.error('Error migrating data', err);
+          alert('Hubo un error al migrar los datos. Revisa la consola.');
+        }
+      });
     }
   }
 

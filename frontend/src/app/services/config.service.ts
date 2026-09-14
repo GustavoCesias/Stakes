@@ -69,4 +69,8 @@ export class ConfigService {
   deleteMarket(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/markets/${id}`);
   }
+
+  migrateLegacyData(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/migrate-legacy`, {});
+  }
 }

@@ -24,6 +24,81 @@ public class ConfigController {
     @Autowired
     private MarketConfigRepository marketConfigRepository;
 
+    @Autowired
+    private com.stakes.api.repositories.TipRepository tipRepository;
+
+    @PostMapping("/migrate-legacy")
+    public String migrateLegacyData() {
+        List<com.stakes.api.models.Tip> tips = tipRepository.findAll();
+        
+        // Migrate Sports
+        java.util.Set<String> sportNames = tips.stream()
+                .map(com.stakes.api.models.Tip::getSport)
+                .filter(s -> s != null && !s.trim().isEmpty())
+                .collect(java.util.stream.Collectors.toSet());
+                
+        java.util.Map<String, Sport> sportMap = new java.util.HashMap<>();
+        for (Sport s : sportRepository.findAll()) {
+            sportMap.put(s.getName().toLowerCase(), s);
+        }
+        for (String sName : sportNames) {
+            if (!sportMap.containsKey(sName.toLowerCase())) {
+                Sport s = new Sport();
+                s.setName(sName);
+                s.setIcon("🏅");
+                s = sportRepository.save(s);
+                sportMap.put(sName.toLowerCase(), s);
+            }
+        }
+        
+        // Migrate Leagues
+        java.util.Set<String> leagueKeys = new java.util.HashSet<>();
+        for (League l : leagueRepository.findAll()) {
+            if (l.getSport() != null) {
+                leagueKeys.add(l.getSport().getName().toLowerCase() + "|" + l.getName().toLowerCase());
+            }
+        }
+        for (com.stakes.api.models.Tip tip : tips) {
+            if (tip.getSport() == null || tip.getLeague() == null || tip.getLeague().trim().isEmpty()) continue;
+            String key = tip.getSport().toLowerCase() + "|" + tip.getLeague().toLowerCase();
+            if (!leagueKeys.contains(key)) {
+                Sport sport = sportMap.get(tip.getSport().toLowerCase());
+                if (sport != null) {
+                    League l = new League();
+                    l.setName(tip.getLeague());
+                    l.setSport(sport);
+                    leagueRepository.save(l);
+                    leagueKeys.add(key);
+                }
+            }
+        }
+        
+        // Migrate Markets
+        java.util.Set<String> marketKeys = new java.util.HashSet<>();
+        for (MarketConfig m : marketConfigRepository.findAll()) {
+            if (m.getSport() != null) {
+                marketKeys.add(m.getSport().getName().toLowerCase() + "|" + m.getName().toLowerCase());
+            }
+        }
+        for (com.stakes.api.models.Tip tip : tips) {
+            if (tip.getSport() == null || tip.getMarket() == null || tip.getMarket().trim().isEmpty()) continue;
+            String key = tip.getSport().toLowerCase() + "|" + tip.getMarket().toLowerCase();
+            if (!marketKeys.contains(key)) {
+                Sport sport = sportMap.get(tip.getSport().toLowerCase());
+                if (sport != null) {
+                    MarketConfig m = new MarketConfig();
+                    m.setName(tip.getMarket());
+                    m.setSport(sport);
+                    m.setInputType("text");
+                    marketConfigRepository.save(m);
+                    marketKeys.add(key);
+                }
+            }
+        }
+        
+        return "{\"status\":\"success\"}";
+    }
+
     // --- SPORTS ---
     @GetMapping("/sports")
     public List<Sport> getAllSports() {
