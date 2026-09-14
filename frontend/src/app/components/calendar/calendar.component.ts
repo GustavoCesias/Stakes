@@ -180,13 +180,24 @@ export class CalendarComponent implements OnInit {
       }
       
       this.selectedPicksGroups = Array.from(groupsMap.entries()).map(([name, groupTips]) => {
-        // Try to find the total odds from the subgroup if it exists, otherwise leave empty
-        // The subgroup (ChannelSubgroup) itself doesn't have odds, but we can just say "Bet Builder"
-        // and hide the individual odds if they are null.
+        let totalOdds = 0;
+        let groupResult = 'PENDIENTE';
+        
+        for (const pt of groupTips) {
+            if (pt.odds && pt.odds > totalOdds) {
+                totalOdds = pt.odds;
+            }
+            if (pt.result && pt.result !== 'PENDIENTE') {
+                groupResult = pt.result;
+            }
+        }
+        
         return {
           isBetBuilder: true,
-          name: name.includes('(BB1)') ? 'Bet Builder 1' : name.includes('(BB2)') ? 'Bet Builder 2' : name.includes('(BB3)') ? 'Bet Builder 3' : 'Bet Builder',
-          picks: groupTips
+          name: name.includes('(BB1)') ? 'Bet Builder 1' : name.includes('(BB2)') ? 'Bet Builder 2' : name.includes('(BB3)') ? 'Bet Builder 3' : (name.includes('(BB') ? 'Bet Builder' : name),
+          picks: groupTips,
+          totalOdds: totalOdds > 0 ? totalOdds : null,
+          groupResult: groupResult
         };
       });
       
@@ -194,7 +205,9 @@ export class CalendarComponent implements OnInit {
         this.selectedPicksGroups.push({
           isBetBuilder: false,
           name: 'Picks Individuales',
-          picks: loosePicks
+          picks: loosePicks,
+          totalOdds: null,
+          groupResult: null
         });
       }
     });

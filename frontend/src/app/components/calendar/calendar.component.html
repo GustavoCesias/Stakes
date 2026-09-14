@@ -162,10 +162,20 @@
       <div *ngIf="selectedPicksGroups.length > 0" class="space-y-6">
         <div *ngFor="let group of selectedPicksGroups" class="space-y-3">
           <!-- Group Header (Only show if it's a Bet Builder) -->
-          <h4 *ngIf="group.isBetBuilder" class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-2 bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/20 inline-flex">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-            {{group.name}} ({{group.picks.length}} picks)
-          </h4>
+          <div *ngIf="group.isBetBuilder" class="flex flex-col sm:flex-row sm:items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-2 mb-2 gap-2">
+            <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 text-blue-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              {{group.name}} ({{group.picks.length}} picks)
+            </h4>
+            <div class="flex items-center gap-3">
+              <span *ngIf="group.totalOdds" class="text-lg font-bold text-emerald-400">&#64;{{group.totalOdds}}</span>
+              
+              <span *ngIf="group.groupResult === 'PENDIENTE'" class="px-2 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded text-xs font-medium">Pendiente</span>
+              <span *ngIf="group.groupResult === 'GANADA'" class="px-2 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded text-xs font-medium">Ganada</span>
+              <span *ngIf="group.groupResult === 'PERDIDA'" class="px-2 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded text-xs font-medium">Perdida</span>
+              <span *ngIf="group.groupResult === 'NULA'" class="px-2 py-1 bg-gray-500/10 text-gray-400 border border-gray-500/20 rounded text-xs font-medium">Nula</span>
+            </div>
+          </div>
 
           <div *ngFor="let pick of group.picks" class="bg-gray-900 border border-gray-700 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden" [ngClass]="{'ml-4 border-l-2 border-l-blue-500/50': group.isBetBuilder}">
             <!-- Background highlight for bet builder legs -->
@@ -178,8 +188,8 @@
             
             <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end relative z-10">
               <!-- Only show odds if it's > 0 or not a betbuilder where odds are missing -->
-              <div *ngIf="pick.odds" class="text-lg font-bold text-emerald-400">&#64;{{pick.odds}}</div>
-              <div *ngIf="!pick.odds" class="text-sm font-medium text-gray-500 italic">Sin cuota ind.</div>
+              <div *ngIf="pick.odds && !group.isBetBuilder" class="text-lg font-bold text-emerald-400">&#64;{{pick.odds}}</div>
+              <div *ngIf="group.isBetBuilder || !pick.odds" class="text-sm font-medium text-gray-500 italic">Sin cuota ind.</div>
               
               <span *ngIf="pick.result === 'PENDIENTE'" class="px-3 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-lg text-sm font-medium">Pendiente</span>
               <span *ngIf="pick.result === 'GANADA'" class="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg text-sm font-medium">Ganada</span>
