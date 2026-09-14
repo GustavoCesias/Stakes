@@ -58,8 +58,22 @@ public class ConfigController {
 
     // --- MARKETS ---
     @GetMapping("/markets")
-    public List<MarketConfig> getAllMarkets() {
-        return marketConfigRepository.findAll();
+    public List<java.util.Map<String, Object>> getAllMarkets() {
+        return marketConfigRepository.findAll().stream().map(market -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", market.getId());
+            map.put("name", market.getName());
+            map.put("inputType", market.getInputType());
+            map.put("options", market.getOptions());
+            if (market.getSport() != null) {
+                java.util.Map<String, Object> sportMap = new java.util.HashMap<>();
+                sportMap.put("id", market.getSport().getId());
+                sportMap.put("name", market.getSport().getName());
+                sportMap.put("icon", market.getSport().getIcon());
+                map.put("sport", sportMap);
+            }
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
     }
 
     @PostMapping("/markets")

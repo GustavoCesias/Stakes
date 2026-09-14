@@ -7,7 +7,9 @@ import lombok.AllArgsConstructor;
 import java.util.List;
 
 @Entity
-@Table(name = "market_configs")
+@Table(name = "market_configs", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "sport_id"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,13 +18,13 @@ public class MarketConfig {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String name; // e.g. "Goles Totales", "Ganador del Partido"
 
     @Column(nullable = false)
     private String inputType; // e.g. "NUMERIC", "OPTIONS", "TEXT"
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "market_options", joinColumns = @JoinColumn(name = "market_id"))
     @Column(name = "option_value")
     private List<String> options; // e.g. ["Local", "Empate", "Visita"] for OPTIONS type
