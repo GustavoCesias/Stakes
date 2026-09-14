@@ -75,9 +75,10 @@ public class CalendarController {
         Set<String> processedTipEvents = new HashSet<>();
         
         for (Tip tip : tips) {
-            if (tip.getEvent() == null || tip.getEvent().isEmpty()) continue;
+            if (tip.getEvent() == null || tip.getEvent().trim().isEmpty()) continue;
             
-            String uniqueKey = tip.getEvent() + "_" + tip.getDate().toString();
+            String normalizedEvent = tip.getEvent().trim().toLowerCase().replaceAll("\\s+", " ");
+            String uniqueKey = normalizedEvent + "_" + tip.getDate().toString();
             if (processedTipEvents.contains(uniqueKey)) continue;
             processedTipEvents.add(uniqueKey);
             
