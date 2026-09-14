@@ -36,4 +36,9 @@ export class CalendarService {
   deleteEvent(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/events/${id}`);
   }
+
+  getTipsForEvent(date: string, homeTeam: string, awayTeam: string): Observable<any[]> {
+    const dateStr = date.substring(0, 10);
+    return this.http.get<any[]>(`${this.apiUrl}/events/tips?date=${dateStr}&homeTeam=${encodeURIComponent(homeTeam)}&awayTeam=${encodeURIComponent(awayTeam)}`);
+  }
 }

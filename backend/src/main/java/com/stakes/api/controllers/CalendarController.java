@@ -77,27 +77,29 @@ public class CalendarController {
         for (Tip tip : tips) {
             if (tip.getEvent() == null || tip.getEvent().trim().isEmpty()) continue;
             
-            String normalizedEvent = tip.getEvent().trim().toLowerCase().replaceAll("\\s+", " ");
+            // Clean BB tags (e.g. "(BB)", "(BB1)", "(BB2)")
+            String cleanEventName = tip.getEvent().replaceAll("(?i)\\s*\\(bb\\d*\\)\\s*", "").trim();
+            if (cleanEventName.isEmpty()) continue;
+
+            String normalizedEvent = cleanEventName.toLowerCase().replaceAll("\\s+", " ");
             String uniqueKey = normalizedEvent + "_" + tip.getDate().toString();
             if (processedTipEvents.contains(uniqueKey)) continue;
             processedTipEvents.add(uniqueKey);
             
             // Check if it matches league filter (by name)
             if (leagueId != null) {
-                // Not perfectly accurate since Tip only has String league, but we can skip filtering for old tips
-                // Or try to match if we want to be strict. For simplicity, we show it if league matches or is null
                 // We'll skip filtering for old tips to ensure they are visible.
             }
             
             CalendarEventDto dto = new CalendarEventDto();
             dto.setId(null); // No ID for old tips, so they can't be deleted via calendar
             
-            String[] teams = tip.getEvent().split("(?i)\\s+vs\\s+");
+            String[] teams = cleanEventName.split("(?i)\\s+vs\\s+");
             if (teams.length >= 2) {
                 dto.setHomeTeam(teams[0].trim());
                 dto.setAwayTeam(teams[1].trim());
             } else {
-                teams = tip.getEvent().split("\\s*-\\s*");
+                teams = cleanEventName.split("\\s*-\\s*");
                 if (teams.length >= 2) {
                     dto.setHomeTeam(teams[0].trim());
                     String away = teams[1].trim();
@@ -108,7 +110,7 @@ public class CalendarController {
                     }
                     dto.setAwayTeam(away);
                 } else {
-                    String eventStr = tip.getEvent().trim();
+                    String eventStr = cleanEventName;
                     if (eventStr.toUpperCase().endsWith(" VS")) {
                         eventStr = eventStr.substring(0, eventStr.length() - 3).trim();
                     } else if (eventStr.toUpperCase().endsWith("VS")) {
@@ -146,6 +148,35 @@ public class CalendarController {
         }
 
         return dtos;
+    }
+
+    @GetMapping("/events/tips")
+    public List<Tip> getTipsForEvent(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam String homeTeam,
+            @RequestParam String awayTeam) {
+        
+        List<Tip> allTipsOnDate = tipRepository.findByDateBetween(date, date);
+        List<Tip> matchingTips = new ArrayList<>();
+        
+        String queryEventName = homeTeam.trim() + (awayTeam.trim().isEmpty() ? "" : " vs " + awayTeam.trim());
+        String normalizedQuery = queryEventName.toLowerCase().replaceAll("\\s+", " ");
+        
+        // Also support searching just by home team if away team wasn't parsed well
+        String normalizedHomeOnly = homeTeam.trim().toLowerCase().replaceAll("\\s+", " ");
+        
+        for (Tip tip : allTipsOnDate) {
+            if (tip.getEvent() == null) continue;
+            String cleanEventName = tip.getEvent().replaceAll("(?i)\\s*\\(bb\\d*\\)\\s*", "").trim();
+            String normalizedEvent = cleanEventName.toLowerCase().replaceAll("\\s+", " ");
+            
+            if (normalizedEvent.contains(normalizedQuery) || 
+                (awayTeam.trim().isEmpty() && normalizedEvent.contains(normalizedHomeOnly))) {
+                matchingTips.add(tip);
+            }
+        }
+        
+        return matchingTips;
     }
 
     @PostMapping("/events")

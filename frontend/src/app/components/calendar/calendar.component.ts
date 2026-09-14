@@ -43,6 +43,11 @@ export class CalendarComponent implements OnInit {
   selectedSportId: number | undefined;
   filteredLeagues: League[] = [];
 
+  // Picks Modal state
+  showPicksModal = false;
+  selectedPicks: any[] = [];
+  selectedPicksEventName = '';
+
   constructor() {
     // Default to current week
     const now = new Date();
@@ -153,5 +158,15 @@ export class CalendarComponent implements OnInit {
     const d = new Date(isoString);
     const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     return `${days[d.getDay()]} ${d.getDate()} - ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  }
+
+  viewPicks(event: SportEvent) {
+    this.selectedPicksEventName = `${event.homeTeam} vs ${event.awayTeam}`;
+    this.selectedPicks = [];
+    this.showPicksModal = true;
+    
+    this.calendarService.getTipsForEvent(event.eventDate, event.homeTeam, event.awayTeam).subscribe(tips => {
+      this.selectedPicks = tips;
+    });
   }
 }
