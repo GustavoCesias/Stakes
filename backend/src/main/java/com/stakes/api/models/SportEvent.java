@@ -23,6 +23,7 @@ public class SportEvent {
     private String awayTeam;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm[:ss]")
     private LocalDateTime eventDate;
 
     @ManyToOne

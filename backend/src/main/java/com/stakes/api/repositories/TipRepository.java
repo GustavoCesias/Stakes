@@ -23,4 +23,6 @@ public interface TipRepository extends JpaRepository<Tip, Long> {
     @Modifying
     @Query("UPDATE Tip t SET t.subgroup = null WHERE t.subgroup.id = :subgroupId")
     void nullifySubgroupId(@Param("subgroupId") Long subgroupId);
+
+    List<Tip> findByDateBetween(java.time.LocalDate startDate, java.time.LocalDate endDate);
 }
