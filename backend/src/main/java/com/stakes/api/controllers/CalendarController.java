@@ -88,34 +88,24 @@ public class CalendarController {
             cleanEventName = cleanEventName.replace("\u00A0", " ").replace("\u200B", "").replace("\u200E", "").trim();
             if (cleanEventName.isEmpty()) continue;
 
-            String normalizedEvent = cleanEventName.toLowerCase().replaceAll("\\s+", " ");
-            String uniqueKey = normalizedEvent + "_" + tip.getDate().toString();
-            if (processedTipEvents.contains(uniqueKey)) continue;
-            processedTipEvents.add(uniqueKey);
-            
-            // Check if it matches league filter (by name)
-            if (leagueId != null) {
-                // We'll skip filtering for old tips to ensure they are visible.
-            }
-            
-            CalendarEventDto dto = new CalendarEventDto();
-            dto.setId(null); // No ID for old tips, so they can't be deleted via calendar
-            
+            // Parse teams first
+            String homeTeam = "";
+            String awayTeam = "";
             String[] teams = cleanEventName.split("(?i)\\s+vs\\s+");
             if (teams.length >= 2) {
-                dto.setHomeTeam(teams[0].trim());
-                dto.setAwayTeam(teams[1].trim());
+                homeTeam = teams[0].trim();
+                awayTeam = teams[1].trim();
             } else {
                 teams = cleanEventName.split("\\s*-\\s*");
                 if (teams.length >= 2) {
-                    dto.setHomeTeam(teams[0].trim());
+                    homeTeam = teams[0].trim();
                     String away = teams[1].trim();
                     if (away.toUpperCase().endsWith(" VS")) {
                         away = away.substring(0, away.length() - 3).trim();
                     } else if (away.toUpperCase().endsWith("VS")) {
                         away = away.substring(0, away.length() - 2).trim();
                     }
-                    dto.setAwayTeam(away);
+                    awayTeam = away;
                 } else {
                     String eventStr = cleanEventName;
                     if (eventStr.toUpperCase().endsWith(" VS")) {
@@ -123,10 +113,21 @@ public class CalendarController {
                     } else if (eventStr.toUpperCase().endsWith("VS")) {
                         eventStr = eventStr.substring(0, eventStr.length() - 2).trim();
                     }
-                    dto.setHomeTeam(eventStr);
-                    dto.setAwayTeam("");
+                    homeTeam = eventStr;
+                    awayTeam = "";
                 }
             }
+
+            // Generate unique key AFTER parsing
+            String normalizedEvent = (homeTeam + " vs " + awayTeam).toLowerCase().replaceAll("\\s+", " ");
+            String uniqueKey = normalizedEvent + "_" + tip.getDate().toString();
+            if (processedTipEvents.contains(uniqueKey)) continue;
+            processedTipEvents.add(uniqueKey);
+
+            CalendarEventDto dto = new CalendarEventDto();
+            dto.setId(null); // No ID for old tips, so they can't be deleted via calendar
+            dto.setHomeTeam(homeTeam);
+            dto.setAwayTeam(awayTeam);
             
             // Set time to 00:00 for old tips since they only have LocalDate
             dto.setEventDate(tip.getDate().atStartOfDay().toString());
