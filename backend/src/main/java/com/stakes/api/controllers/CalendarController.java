@@ -67,12 +67,18 @@ public class CalendarController {
             dtos.add(dto);
         }
 
+        Set<String> processedTipEvents = new HashSet<>();
+        for (SportEvent se : sportEvents) {
+            String eventStr = se.getHomeTeam() + " vs " + se.getAwayTeam();
+            String cleanEventName = eventStr.replace("\u00A0", " ").replace("\u200B", "").replace("\u200E", "").trim();
+            String normalizedEvent = cleanEventName.toLowerCase().replaceAll("\\s+", " ");
+            processedTipEvents.add(normalizedEvent + "_" + se.getEventDate().toLocalDate().toString());
+        }
+
         // Add events from Tips
         LocalDate startDate = start.toLocalDate();
         LocalDate endDate = end.toLocalDate();
         List<Tip> tips = tipRepository.findByDateBetween(startDate, endDate);
-        
-        Set<String> processedTipEvents = new HashSet<>();
         
         for (Tip tip : tips) {
             if (tip.getEvent() == null || tip.getEvent().trim().isEmpty()) continue;
