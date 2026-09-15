@@ -78,7 +78,8 @@ public class CalendarController {
             if (tip.getEvent() == null || tip.getEvent().trim().isEmpty()) continue;
             
             // Clean BB tags (e.g. "(BB)", "(BB1)", "(BB2)")
-            String cleanEventName = tip.getEvent().replaceAll("(?i)\\s*\\(bb\\d*\\)\\s*", "").trim();
+            String cleanEventName = tip.getEvent().replaceAll("(?i)\\s*\\(bb\\d*\\)\\s*", "");
+            cleanEventName = cleanEventName.replace("\u00A0", " ").replace("\u200B", "").replace("\u200E", "").trim();
             if (cleanEventName.isEmpty()) continue;
 
             String normalizedEvent = cleanEventName.toLowerCase().replaceAll("\\s+", " ");
