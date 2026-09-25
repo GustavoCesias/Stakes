@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TicketService, Ticket } from '../../services/ticket.service';
@@ -12,6 +12,8 @@ export interface CalendarSelection {
   odds: number | null;
   dateStr: string;
   isBetBuilder: boolean;
+  stake?: number;
+  profit?: number;
 }
 
 export interface CalendarEventAggregate {
@@ -21,6 +23,7 @@ export interface CalendarEventAggregate {
   dateStr: string;
   ticketsCount: number;
   selections: CalendarSelection[];
+  result: string; // Aggregate result for the dot color
 }
 
 export interface CalendarDay {
@@ -29,8 +32,10 @@ export interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   aggregatedEvents: CalendarEventAggregate[];
+  selections: CalendarSelection[]; // Raw selections for this day
   profit: number;
   hasResolvedTickets: boolean;
+  isSelected?: boolean;
 }
 
 @Component({
@@ -43,10 +48,12 @@ export interface CalendarDay {
 export class CalendarComponent implements OnInit {
   ticketService = inject(TicketService);
   
-  currentDate: Date = new Date(); // Represents the month we are viewing
+  currentDate: Date = new Date();
   days: CalendarDay[] = [];
   
-  viewMode: 'events' | 'profits' = 'events'; // Toggle between Events and Daily Profits
+  viewMode: 'events' | 'profits' = 'events'; 
+  sidebarState: 'summary' | 'dayDetail' = 'summary';
+  selectedDay: CalendarDay | null = null;
 
   // Sidebar Summary
   monthTickets: Ticket[] = [];
@@ -59,17 +66,8 @@ export class CalendarComponent implements OnInit {
   };
   upcomingEvents: CalendarSelection[] = [];
 
-  // Modal Picks
-  showPicksModal = false;
-  selectedPicksEventName = '';
-  selectedPicks: CalendarSelection[] = [];
-
-  // Modal Day View
-  showDayModal = false;
-  selectedDay: CalendarDay | null = null;
-
   ngOnInit() {
-    this.currentDate.setDate(1); // Set to 1st of month
+    this.currentDate.setDate(1); 
     this.ticketService.getTickets().subscribe(tickets => {
       this.processData(tickets);
     });
@@ -96,7 +94,6 @@ export class CalendarComponent implements OnInit {
   }
 
   processData(allTickets: Ticket[]) {
-    // 1. Filter tickets for current month (for the summary)
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
     
@@ -120,10 +117,8 @@ export class CalendarComponent implements OnInit {
       totalProfit: monthProfit
     };
     
-    // 2. Extract all selections 
     const allSelections = this.extractEvents(allTickets);
     
-    // 3. Group selections by EventStr for the calendar chips
     const eventMap = new Map<string, CalendarEventAggregate>();
     allSelections.forEach(sel => {
        const key = `${sel.dateStr}_${sel.eventStr}`;
@@ -134,30 +129,32 @@ export class CalendarComponent implements OnInit {
            leagueIcon: sel.leagueIcon,
            dateStr: sel.dateStr,
            ticketsCount: 0,
-           selections: []
+           selections: [],
+           result: sel.result
          });
        }
        const agg = eventMap.get(key)!;
        agg.ticketsCount++;
        agg.selections.push(sel);
+       // Simple consensus logic: if at least one is pending, show pending color
+       if (sel.result === 'PENDIENTE') {
+           agg.result = 'PENDIENTE';
+       }
     });
     const aggregatedEvents = Array.from(eventMap.values());
     
-    // 4. Upcoming events (next 5 pending)
     const todayStr = new Date().toISOString().substring(0, 10);
     this.upcomingEvents = allSelections
       .filter(s => s.result === 'PENDIENTE' && s.dateStr >= todayStr)
       .sort((a, b) => a.dateStr.localeCompare(b.dateStr))
       .slice(0, 5);
       
-    // 5. Generate Grid
-    this.generateGrid(aggregatedEvents, allTickets);
+    this.generateGrid(aggregatedEvents, allSelections, allTickets);
   }
   
   normalizeDate(rawDate: any): string {
     if (!rawDate) return '';
     if (Array.isArray(rawDate)) {
-      // Backend LocalDate serializes to [YYYY, MM, DD]
       const [y, m, d] = rawDate;
       return `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
     }
@@ -172,7 +169,6 @@ export class CalendarComponent implements OnInit {
     tickets.forEach(t => {
       const ticketDateStr = this.normalizeDate(t.date);
       
-      // Process simple/combo selections
       if (t.selections && t.selections.length > 0) {
         t.selections.forEach(sel => {
            evts.push({
@@ -181,14 +177,15 @@ export class CalendarComponent implements OnInit {
              leagueIcon: this.getIconForSport(sel.tip?.sport),
              eventStr: this.formatEventStr(sel.tip?.event || ''),
              result: sel.result || t.result || 'PENDIENTE',
-             odds: sel.tip?.odds || null,
+             odds: sel.tip?.odds || t.totalOdds,
              dateStr: this.normalizeDate(sel.tip?.date) || ticketDateStr,
-             isBetBuilder: false
+             isBetBuilder: false,
+             stake: t.stake,
+             profit: t.profit
            });
         });
       } 
       
-      // Process BetBuilders
       if (t.betBuilders && t.betBuilders.length > 0) {
         t.betBuilders.forEach(bb => {
            if (bb.selections && bb.selections.length > 0) {
@@ -201,7 +198,9 @@ export class CalendarComponent implements OnInit {
                result: t.result || 'PENDIENTE',
                odds: bb.realOdds || bb.expectedOdds || t.totalOdds,
                dateStr: this.normalizeDate(firstSel.tip?.date) || ticketDateStr,
-               isBetBuilder: true
+               isBetBuilder: true,
+               stake: t.stake, // Might not be accurate if betbuilder stake is split, but good enough for now
+               profit: t.profit
              });
            }
         });
@@ -210,22 +209,17 @@ export class CalendarComponent implements OnInit {
     return evts;
   }
   
-  generateGrid(aggregatedEvents: CalendarEventAggregate[], allTickets: Ticket[]) {
+  generateGrid(aggregatedEvents: CalendarEventAggregate[], allSelections: CalendarSelection[], allTickets: Ticket[]) {
     this.days = [];
-    
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
-    
     const firstDayOfMonth = new Date(year, month, 1);
     
-    // Get day of week (0 = Sun, 1 = Mon). Adjust to make Monday = 0
     let startDayOfWeek = firstDayOfMonth.getDay() - 1;
-    if (startDayOfWeek === -1) startDayOfWeek = 6; // Sunday
+    if (startDayOfWeek === -1) startDayOfWeek = 6; 
     
-    // 42 days grid (6 weeks)
     const startDate = new Date(firstDayOfMonth);
     startDate.setDate(startDate.getDate() - startDayOfWeek);
-    
     const todayStr = new Date().toISOString().substring(0, 10);
     
     for (let i = 0; i < 42; i++) {
@@ -233,7 +227,6 @@ export class CalendarComponent implements OnInit {
       d.setDate(d.getDate() + i);
       const dStr = d.toISOString().substring(0, 10);
       
-      // Calculate daily profit from Tickets matching this day
       const dayTickets = allTickets.filter(t => this.normalizeDate(t.date) === dStr);
       let dayProfit = 0;
       let hasResolved = false;
@@ -250,10 +243,34 @@ export class CalendarComponent implements OnInit {
         isCurrentMonth: d.getMonth() === month,
         isToday: dStr === todayStr,
         aggregatedEvents: aggregatedEvents.filter(a => a.dateStr === dStr),
+        selections: allSelections.filter(s => s.dateStr === dStr),
         profit: dayProfit,
-        hasResolvedTickets: hasResolved
+        hasResolvedTickets: hasResolved,
+        isSelected: false
       });
     }
+
+    if (this.sidebarState === 'dayDetail' && this.selectedDay) {
+       const updatedDay = this.days.find(d => d.dateStr === this.selectedDay!.dateStr);
+       if (updatedDay) {
+           this.selectDay(updatedDay);
+       } else {
+           this.closeDayDetail();
+       }
+    }
+  }
+
+  selectDay(day: CalendarDay) {
+    this.days.forEach(d => d.isSelected = false);
+    day.isSelected = true;
+    this.selectedDay = day;
+    this.sidebarState = 'dayDetail';
+  }
+
+  closeDayDetail() {
+    this.sidebarState = 'summary';
+    this.selectedDay = null;
+    this.days.forEach(d => d.isSelected = false);
   }
   
   getIconForSport(sport: string | undefined): string {
@@ -276,6 +293,15 @@ export class CalendarComponent implements OnInit {
     return clean;
   }
   
+  getDotColor(result: string): string {
+    switch (result.toUpperCase()) {
+      case 'GANADA': return 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]';
+      case 'PERDIDA': return 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]';
+      case 'NULA': return 'bg-gray-500';
+      default: return 'bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]';
+    }
+  }
+
   getResultColor(result: string): string {
     switch (result.toUpperCase()) {
       case 'GANADA': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
@@ -294,14 +320,10 @@ export class CalendarComponent implements OnInit {
     }
   }
 
-  openPicksModal(agg: CalendarEventAggregate) {
-    this.selectedPicksEventName = agg.eventStr;
-    this.selectedPicks = agg.selections;
-    this.showPicksModal = true;
-  }
-
-  openDayModal(day: CalendarDay) {
-    this.selectedDay = day;
-    this.showDayModal = true;
+  formatDateLong(dateStr: string): string {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T12:00:00');
+    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    return `${d.getDate()} de ${months[d.getMonth()]}, ${d.getFullYear()}`;
   }
 }
