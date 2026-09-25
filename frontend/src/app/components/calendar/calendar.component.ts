@@ -59,10 +59,14 @@ export class CalendarComponent implements OnInit {
   };
   upcomingEvents: CalendarSelection[] = [];
 
-  // Modal
+  // Modal Picks
   showPicksModal = false;
   selectedPicksEventName = '';
   selectedPicks: CalendarSelection[] = [];
+
+  // Modal Day View
+  showDayModal = false;
+  selectedDay: CalendarDay | null = null;
 
   ngOnInit() {
     this.currentDate.setDate(1); // Set to 1st of month
@@ -294,5 +298,10 @@ export class CalendarComponent implements OnInit {
     this.selectedPicksEventName = agg.eventStr;
     this.selectedPicks = agg.selections;
     this.showPicksModal = true;
+  }
+
+  openDayModal(day: CalendarDay) {
+    this.selectedDay = day;
+    this.showDayModal = true;
   }
 }
