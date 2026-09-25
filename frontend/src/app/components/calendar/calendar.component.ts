@@ -309,7 +309,7 @@ export class CalendarComponent implements OnInit {
   }
 
   addMatch() {
-    this.router.navigate(['/gestor-tickets']);
+    this.router.navigate(['/tickets/mine']);
   }
   
   getIconForSport(sport: string | undefined): string {
