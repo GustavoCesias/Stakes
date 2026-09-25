@@ -73,8 +73,9 @@ export class CalendarComponent implements OnInit {
     const month = this.currentDate.getMonth();
     
     this.monthTickets = allTickets.filter(t => {
-      if (!t.date) return false;
-      const d = new Date(t.date + 'T12:00:00');
+      const tDate = this.normalizeDate(t.date);
+      if (!tDate) return false;
+      const d = new Date(tDate + 'T12:00:00');
       return d.getFullYear() === year && d.getMonth() === month;
     });
     
@@ -99,23 +100,42 @@ export class CalendarComponent implements OnInit {
     this.generateGrid(allSelections);
   }
   
+  normalizeDate(rawDate: any): string {
+    if (!rawDate) return '';
+    if (Array.isArray(rawDate)) {
+      // Backend LocalDate serializes to [YYYY, MM, DD]
+      const [y, m, d] = rawDate;
+      return `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+    }
+    if (typeof rawDate === 'string') {
+      return rawDate.substring(0, 10);
+    }
+    return '';
+  }
+  
   extractEvents(tickets: Ticket[]): CalendarSelection[] {
     const evts: CalendarSelection[] = [];
     tickets.forEach(t => {
-      if (t.type === 'SINGLE' || t.type === 'COMBO') {
-        t.selections?.forEach(sel => {
+      const ticketDateStr = this.normalizeDate(t.date);
+      
+      // Process simple/combo selections
+      if (t.selections && t.selections.length > 0) {
+        t.selections.forEach(sel => {
            evts.push({
              ticketId: t.id!,
              leagueName: sel.tip?.league || 'N/A',
              leagueIcon: this.getIconForSport(sel.tip?.sport),
              eventStr: this.formatEventStr(sel.tip?.event || ''),
-             result: sel.result || 'PENDIENTE',
+             result: sel.result || t.result || 'PENDIENTE',
              odds: sel.tip?.odds || null,
-             dateStr: sel.tip?.date || t.date
+             dateStr: this.normalizeDate(sel.tip?.date) || ticketDateStr
            });
         });
-      } else if (t.type === 'BET_BUILDER') {
-        t.betBuilders?.forEach(bb => {
+      } 
+      
+      // Process BetBuilders
+      if (t.betBuilders && t.betBuilders.length > 0) {
+        t.betBuilders.forEach(bb => {
            if (bb.selections && bb.selections.length > 0) {
              const firstSel = bb.selections[0];
              evts.push({
@@ -125,7 +145,7 @@ export class CalendarComponent implements OnInit {
                eventStr: this.formatEventStr(firstSel.tip?.event || ''),
                result: t.result || 'PENDIENTE',
                odds: bb.realOdds || bb.expectedOdds || t.totalOdds,
-               dateStr: firstSel.tip?.date || t.date
+               dateStr: this.normalizeDate(firstSel.tip?.date) || ticketDateStr
              });
            }
         });
