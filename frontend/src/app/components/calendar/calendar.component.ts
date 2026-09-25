@@ -1,19 +1,24 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CalendarService, SportEvent } from '../../services/calendar.service';
-import { ConfigService, League, Sport } from '../../services/config.service';
+import { TicketService, Ticket } from '../../services/ticket.service';
 
-interface LeagueGroup {
+export interface CalendarSelection {
+  ticketId: number;
   leagueName: string;
-  icon: string;
-  events: SportEvent[];
+  leagueIcon: string;
+  eventStr: string;
+  result: string; // GANADA, PERDIDA, PENDIENTE, NULA
+  odds: number | null;
+  dateStr: string;
 }
 
-interface DayGroup {
-  dateStr: string;
-  displayDate: string;
-  leagues: LeagueGroup[];
+export interface CalendarDay {
+  date: Date;
+  dateStr: string; // YYYY-MM-DD
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  events: CalendarSelection[];
 }
 
 @Component({
@@ -24,192 +29,180 @@ interface DayGroup {
   styleUrl: './calendar.component.css'
 })
 export class CalendarComponent implements OnInit {
-  calendarService = inject(CalendarService);
-  configService = inject(ConfigService);
-
-  events: SportEvent[] = [];
-  groupedEvents: DayGroup[] = [];
-  leagues: League[] = [];
-  sports: Sport[] = [];
-
-  // Filter state
-  selectedLeagueId: number | undefined;
-  weekStart: string;
-  weekEnd: string;
-
-  // Form state
-  showAddModal = false;
-  newEvent: Partial<SportEvent> = {};
-  selectedSportId: number | undefined;
-  filteredLeagues: League[] = [];
-
-  // Picks Modal state
-  showPicksModal = false;
-  selectedPicks: any[] = []; // keeping this just in case, but will use groups mostly
-  selectedPicksGroups: any[] = [];
-  selectedPicksEventName = '';
-
-  constructor() {
-    // Default to current week
-    const now = new Date();
-    const day = now.getDay() || 7; // 1-7 (Mon-Sun)
-    const mon = new Date(now);
-    mon.setDate(now.getDate() - day + 1);
-    mon.setHours(0,0,0,0);
-    
-    const sun = new Date(mon);
-    sun.setDate(mon.getDate() + 6);
-    sun.setHours(23,59,59,999);
-
-    this.weekStart = mon.toISOString();
-    this.weekEnd = sun.toISOString();
-  }
+  ticketService = inject(TicketService);
+  
+  currentDate: Date = new Date(); // Represents the month we are viewing
+  days: CalendarDay[] = [];
+  
+  // Sidebar Summary
+  monthTickets: Ticket[] = [];
+  summary = {
+    total: 0,
+    won: 0,
+    lost: 0,
+    pending: 0
+  };
+  upcomingEvents: CalendarSelection[] = [];
 
   ngOnInit() {
-    this.loadData();
-    this.configService.getSports().subscribe(s => this.sports = s);
-    this.configService.getLeagues().subscribe(l => this.leagues = l);
-  }
-
-  loadData() {
-    this.calendarService.getEvents(this.weekStart, this.weekEnd, this.selectedLeagueId).subscribe(data => {
-      this.events = data;
-      this.groupEvents();
+    this.currentDate.setDate(1); // Set to 1st of month
+    this.ticketService.getTickets().subscribe(tickets => {
+      this.processData(tickets);
     });
   }
+  
+  get displayMonthYear(): string {
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return `${months[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
+  }
 
-  groupEvents() {
-    // 1. Group by day (YYYY-MM-DD)
-    const byDay = new Map<string, SportEvent[]>();
-    for (const e of this.events) {
-       const day = e.eventDate.substring(0, 10);
-       if (!byDay.has(day)) byDay.set(day, []);
-       byDay.get(day)!.push(e);
-    }
+  changeMonth(offset: number) {
+    this.currentDate.setMonth(this.currentDate.getMonth() + offset);
+    this.ticketService.getTickets().subscribe(tickets => this.processData(tickets));
+  }
+  
+  goToToday() {
+    this.currentDate = new Date();
+    this.currentDate.setDate(1);
+    this.ticketService.getTickets().subscribe(tickets => this.processData(tickets));
+  }
+
+  processData(allTickets: Ticket[]) {
+    // 1. Filter tickets for current month (for the summary)
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
     
-    // 2. For each day, group by league
-    this.groupedEvents = Array.from(byDay.entries()).map(([dateStr, dayEvents]) => {
-        // Build a display date
-        const d = new Date(dateStr + 'T12:00:00'); // avoid timezone shifts
-        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const displayDate = `${days[d.getDay()]} ${d.getDate()} de ${months[d.getMonth()]}`;
-        
-        const byLeague = new Map<string, { icon: string, events: SportEvent[] }>();
-        for (const e of dayEvents) {
-            const lName = e.league?.name || 'Desconocida';
-            const icon = e.league?.sport?.icon || '⚽';
-            
-            if (!byLeague.has(lName)) byLeague.set(lName, { icon, events: [] });
-            byLeague.get(lName)!.events.push(e);
-        }
-        
-        const leagues = Array.from(byLeague.entries()).map(([leagueName, data]) => ({
-            leagueName,
-            icon: data.icon,
-            events: data.events
-        })).sort((a,b) => a.leagueName.localeCompare(b.leagueName));
-        
-        return { dateStr, displayDate, leagues };
-    }).sort((a,b) => a.dateStr.localeCompare(b.dateStr));
-  }
-
-  changeWeek(offset: number) {
-    const dStart = new Date(this.weekStart);
-    dStart.setDate(dStart.getDate() + (offset * 7));
-    this.weekStart = dStart.toISOString();
-
-    const dEnd = new Date(this.weekEnd);
-    dEnd.setDate(dEnd.getDate() + (offset * 7));
-    this.weekEnd = dEnd.toISOString();
-
-    this.loadData();
-  }
-
-  onSportChange() {
-    this.filteredLeagues = this.leagues.filter(l => l.sport.id === this.selectedSportId);
-    this.newEvent.league = undefined;
-  }
-
-  openAddModal() {
-    this.newEvent = {
-      eventDate: new Date().toISOString().substring(0, 16)
+    this.monthTickets = allTickets.filter(t => {
+      if (!t.date) return false;
+      const d = new Date(t.date + 'T12:00:00');
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+    
+    this.summary = {
+      total: this.monthTickets.length,
+      won: this.monthTickets.filter(t => t.result === 'GANADA').length,
+      lost: this.monthTickets.filter(t => t.result === 'PERDIDA').length,
+      pending: this.monthTickets.filter(t => t.result === 'PENDIENTE').length
     };
-    this.selectedSportId = undefined;
-    this.filteredLeagues = [];
-    this.showAddModal = true;
-  }
-
-  saveEvent() {
-    if (!this.newEvent.homeTeam || !this.newEvent.awayTeam || !this.newEvent.league || !this.newEvent.eventDate) return;
     
-    this.calendarService.createEvent(this.newEvent as SportEvent).subscribe(() => {
-      this.showAddModal = false;
-      this.loadData();
-    });
-  }
-
-  deleteEvent(id: number) {
-    if (confirm('¿Eliminar partido del calendario?')) {
-      this.calendarService.deleteEvent(id).subscribe(() => this.loadData());
-    }
-  }
-
-  formatDate(isoString: string): string {
-    const d = new Date(isoString);
-    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    return `${days[d.getDay()]} ${d.getDate()} - ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-  }
-
-  viewPicks(event: SportEvent) {
-    this.selectedPicksEventName = `${event.homeTeam} vs ${event.awayTeam}`;
-    this.selectedPicksGroups = [];
-    this.showPicksModal = true;
+    // 2. Extract all selections into chips for the calendar
+    const allSelections = this.extractEvents(allTickets);
     
-    this.calendarService.getTipsForEvent(event.eventDate, event.homeTeam, event.awayTeam).subscribe(tips => {
-      const groupsMap = new Map<string, any[]>();
-      const loosePicks: any[] = [];
+    // 3. Upcoming events (next 5 pending)
+    const todayStr = new Date().toISOString().substring(0, 10);
+    this.upcomingEvents = allSelections
+      .filter(s => s.result === 'PENDIENTE' && s.dateStr >= todayStr)
+      .sort((a, b) => a.dateStr.localeCompare(b.dateStr))
+      .slice(0, 5);
       
-      for (const tip of tips) {
-        if (tip.event && tip.event.toUpperCase().includes('(BB')) {
-          if (!groupsMap.has(tip.event)) groupsMap.set(tip.event, []);
-          groupsMap.get(tip.event)!.push(tip);
-        } else {
-          loosePicks.push(tip);
-        }
-      }
-      
-      this.selectedPicksGroups = Array.from(groupsMap.entries()).map(([name, groupTips]) => {
-        let totalOdds = 0;
-        let groupResult = 'PENDIENTE';
-        
-        for (const pt of groupTips) {
-            if (pt.odds && pt.odds > totalOdds) {
-                totalOdds = pt.odds;
-            }
-            if (pt.result && pt.result !== 'PENDIENTE') {
-                groupResult = pt.result;
-            }
-        }
-        
-        return {
-          isBetBuilder: true,
-          name: name.includes('(BB1)') ? 'Bet Builder 1' : name.includes('(BB2)') ? 'Bet Builder 2' : name.includes('(BB3)') ? 'Bet Builder 3' : (name.includes('(BB') ? 'Bet Builder' : name),
-          picks: groupTips,
-          totalOdds: totalOdds > 0 ? totalOdds : null,
-          groupResult: groupResult
-        };
-      });
-      
-      if (loosePicks.length > 0) {
-        this.selectedPicksGroups.push({
-          isBetBuilder: false,
-          name: 'Picks Individuales',
-          picks: loosePicks,
-          totalOdds: null,
-          groupResult: null
+    // 4. Generate Grid
+    this.generateGrid(allSelections);
+  }
+  
+  extractEvents(tickets: Ticket[]): CalendarSelection[] {
+    const evts: CalendarSelection[] = [];
+    tickets.forEach(t => {
+      if (t.type === 'SINGLE' || t.type === 'COMBO') {
+        t.selections?.forEach(sel => {
+           evts.push({
+             ticketId: t.id!,
+             leagueName: sel.tip?.league || 'N/A',
+             leagueIcon: this.getIconForSport(sel.tip?.sport),
+             eventStr: this.formatEventStr(sel.tip?.event || ''),
+             result: sel.result || 'PENDIENTE',
+             odds: sel.tip?.odds || null,
+             dateStr: sel.tip?.date || t.date
+           });
+        });
+      } else if (t.type === 'BET_BUILDER') {
+        t.betBuilders?.forEach(bb => {
+           if (bb.selections && bb.selections.length > 0) {
+             const firstSel = bb.selections[0];
+             evts.push({
+               ticketId: t.id!,
+               leagueName: firstSel.tip?.league || 'N/A',
+               leagueIcon: this.getIconForSport(firstSel.tip?.sport),
+               eventStr: this.formatEventStr(firstSel.tip?.event || ''),
+               result: t.result || 'PENDIENTE',
+               odds: bb.realOdds || bb.expectedOdds || t.totalOdds,
+               dateStr: firstSel.tip?.date || t.date
+             });
+           }
         });
       }
     });
+    return evts;
+  }
+  
+  generateGrid(allSelections: CalendarSelection[]) {
+    this.days = [];
+    
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    
+    // Get day of week (0 = Sun, 1 = Mon). Adjust to make Monday = 0
+    let startDayOfWeek = firstDayOfMonth.getDay() - 1;
+    if (startDayOfWeek === -1) startDayOfWeek = 6; // Sunday
+    
+    // 42 days grid (6 weeks)
+    const startDate = new Date(firstDayOfMonth);
+    startDate.setDate(startDate.getDate() - startDayOfWeek);
+    
+    const todayStr = new Date().toISOString().substring(0, 10);
+    
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const dStr = d.toISOString().substring(0, 10);
+      
+      this.days.push({
+        date: d,
+        dateStr: dStr,
+        isCurrentMonth: d.getMonth() === month,
+        isToday: dStr === todayStr,
+        events: allSelections.filter(s => s.dateStr === dStr)
+      });
+    }
+  }
+  
+  getIconForSport(sport: string | undefined): string {
+    if (!sport) return '⚽';
+    const s = sport.toLowerCase();
+    if (s.includes('tenis') || s.includes('tennis')) return '🎾';
+    if (s.includes('basket')) return '🏀';
+    if (s.includes('base') || s.includes('beis')) return '⚾';
+    if (s.includes('foot') || s.includes('fubol') || s.includes('fútbol')) return '⚽';
+    if (s.includes('ping') || s.includes('table')) return '🏓';
+    if (s.includes('e-sport') || s.includes('esport')) return '🎮';
+    return '⚽';
+  }
+  
+  formatEventStr(raw: string): string {
+    let clean = raw.replace(/\s*\(bb\d*\)\s*/gi, '').trim();
+    if (clean.length > 25) {
+      return clean.substring(0, 25) + '...';
+    }
+    return clean;
+  }
+  
+  getResultColor(result: string): string {
+    switch (result.toUpperCase()) {
+      case 'GANADA': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+      case 'PERDIDA': return 'bg-red-500/10 text-red-400 border-red-500/20';
+      case 'NULA': return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+      default: return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    }
+  }
+  
+  getResultText(result: string): string {
+    switch (result.toUpperCase()) {
+      case 'GANADA': return 'Ganada';
+      case 'PERDIDA': return 'Perdida';
+      case 'NULA': return 'Nula';
+      default: return 'Pendiente';
+    }
   }
 }

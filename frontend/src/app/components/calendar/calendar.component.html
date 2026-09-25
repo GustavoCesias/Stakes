@@ -1,204 +1,201 @@
-<div class="p-6 h-full flex flex-col">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold text-white">Calendario de Eventos</h2>
-    <button (click)="openAddModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
+<div class="p-6 h-full flex flex-col overflow-hidden text-gray-200">
+  <!-- Top Header -->
+  <div class="flex items-start justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-white">Calendario de Eventos</h2>
+        <p class="text-sm text-gray-400">Revisa tus apuestas, próximos partidos y mantén el control de tu mes.</p>
+      </div>
+    </div>
+    <button class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2 opacity-50 cursor-not-allowed" title="Usa el Gestor de Tickets para añadir apuestas">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
       Añadir Partido
     </button>
   </div>
 
-  <!-- Header / Filters -->
-  <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 flex flex-wrap gap-4 items-center justify-between">
-    <div class="flex items-center gap-4">
-      <button (click)="changeWeek(-1)" class="p-2 bg-gray-900 rounded-lg text-gray-400 hover:text-white border border-gray-700 transition-colors">
+  <!-- Controls Bar -->
+  <div class="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
+    <!-- Month Nav -->
+    <div class="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1 border border-gray-700">
+      <button (click)="changeMonth(-1)" class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
-      <div class="text-white font-medium">
-        {{weekStart | date:'MMM d'}} - {{weekEnd | date:'MMM d, yyyy'}}
+      <div class="w-36 text-center font-medium text-sm flex items-center justify-center gap-2 cursor-pointer hover:text-emerald-400 transition-colors" (click)="goToToday()">
+        {{displayMonthYear}}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
       </div>
-      <button (click)="changeWeek(1)" class="p-2 bg-gray-900 rounded-lg text-gray-400 hover:text-white border border-gray-700 transition-colors">
+      <button (click)="changeMonth(1)" class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
       </button>
     </div>
 
-    <div class="flex items-center gap-2">
-      <span class="text-gray-400 text-sm">Filtro:</span>
-      <select [(ngModel)]="selectedLeagueId" (change)="loadData()" class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:border-emerald-500">
-        <option [ngValue]="undefined">Todas las Ligas</option>
-        <option *ngFor="let l of leagues" [ngValue]="l.id">{{l.sport.icon}} {{l.name}}</option>
-      </select>
+    <!-- View Toggle (Dummy) -->
+    <div class="flex bg-gray-800/50 rounded-lg p-1 border border-gray-700 text-sm font-medium">
+      <button class="px-4 py-1.5 rounded-md bg-emerald-500 text-white shadow-lg">Mes</button>
+      <button class="px-4 py-1.5 rounded-md text-gray-400 hover:text-white transition-colors cursor-not-allowed opacity-50">Semana</button>
+      <button class="px-4 py-1.5 rounded-md text-gray-400 hover:text-white transition-colors cursor-not-allowed opacity-50">Día</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-3">
+      <button class="px-4 py-2 bg-gray-800/50 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg border border-gray-700 transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+        Filtros
+      </button>
+      <!-- Add Ticket logic is handled via TicketManager -->
+      <button class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 opacity-50 cursor-not-allowed" title="Usa el Gestor de Tickets para añadir apuestas">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Añadir Partido
+      </button>
     </div>
   </div>
 
-  <!-- Grid -->
-  <div class="flex-1 overflow-auto">
-    <!-- Grouped Events -->
-    <div *ngFor="let group of groupedEvents" class="mb-10">
+  <!-- Main Layout -->
+  <div class="flex-1 flex gap-6 overflow-hidden">
+    <!-- Calendar Grid -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-[#111827] rounded-xl border border-gray-800">
+      <!-- Days Header -->
+      <div class="grid grid-cols-7 border-b border-gray-800 bg-[#0f172a]">
+        <div class="text-center py-3 text-xs font-semibold text-gray-400">Lun</div>
+        <div class="text-center py-3 text-xs font-semibold text-gray-400">Mar</div>
+        <div class="text-center py-3 text-xs font-semibold text-gray-400">Mié</div>
+        <div class="text-center py-3 text-xs font-semibold text-gray-400">Jue</div>
+        <div class="text-center py-3 text-xs font-semibold text-gray-400">Vie</div>
+        <div class="text-center py-3 text-xs font-semibold text-gray-400">Sáb</div>
+        <div class="text-center py-3 text-xs font-semibold text-gray-400">Dom</div>
+      </div>
       
-      <!-- Day Header -->
-      <h3 class="text-xl font-bold text-white mb-5 pb-2 border-b border-gray-700 flex items-center gap-3">
-        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        {{group.displayDate}}
-      </h3>
-      
-      <!-- Leagues within Day -->
-      <div *ngFor="let league of group.leagues" class="mb-6 ml-2 border-l-2 border-gray-700/50 pl-4">
-        
-        <!-- League Header -->
-        <div class="flex items-center gap-2 mb-4">
-          <span class="text-lg">{{league.icon}}</span>
-          <span class="text-sm font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-            {{league.leagueName}}
-          </span>
-        </div>
-        
-        <!-- Events Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          
-          <div *ngFor="let event of league.events" class="bg-gray-800 rounded-xl border border-gray-700 p-4 relative group">
-            <div class="absolute top-3 right-3 transition-opacity flex gap-2">
-              <button (click)="viewPicks(event)" class="text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 p-1.5 rounded-lg transition-colors" title="Ver picks asociados">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-              </button>
-              <button *ngIf="event.id" (click)="deleteEvent(event.id!)" class="text-gray-500 hover:text-red-400" title="Eliminar evento">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-              </button>
-            </div>
-
-            <div class="text-center my-3">
-              <div class="text-lg font-bold text-white">{{event.homeTeam}}</div>
-              <div class="text-xs font-bold text-gray-500 my-1">VS</div>
-              <div class="text-lg font-bold text-white">{{event.awayTeam}}</div>
-            </div>
-
-            <div class="mt-4 pt-3 border-t border-gray-700/50 flex justify-center items-center text-sm text-gray-400 font-medium">
-              <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              {{formatDate(event.eventDate).split('-')[1].trim()}}
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <div *ngIf="events.length === 0" class="text-center py-12 text-gray-500 flex flex-col items-center">
-      <svg class="w-12 h-12 mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-      <p>No hay partidos programados para esta semana.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Add Modal -->
-<div *ngIf="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-  <div class="bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700 overflow-hidden shadow-2xl">
-    <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-800/50">
-      <h3 class="text-lg font-bold text-white">Registrar Partido</h3>
-      <button (click)="showAddModal = false" class="text-gray-400 hover:text-white transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
-    
-    <div class="p-6 space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">Deporte</label>
-          <select [(ngModel)]="selectedSportId" (change)="onSportChange()" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
-            <option [ngValue]="undefined">Selecciona...</option>
-            <option *ngFor="let s of sports" [ngValue]="s.id">{{s.icon}} {{s.name}}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">Liga / Competición</label>
-          <select [(ngModel)]="newEvent.league" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none" [disabled]="!selectedSportId">
-            <option [ngValue]="undefined">Selecciona...</option>
-            <option *ngFor="let l of filteredLeagues" [ngValue]="l">{{l.name}}</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm text-gray-400 mb-1">Equipo Local</label>
-        <input type="text" [(ngModel)]="newEvent.homeTeam" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
-      </div>
-
-      <div>
-        <label class="block text-sm text-gray-400 mb-1">Equipo Visitante</label>
-        <input type="text" [(ngModel)]="newEvent.awayTeam" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none">
-      </div>
-
-      <div>
-        <label class="block text-sm text-gray-400 mb-1">Fecha y Hora</label>
-        <input type="datetime-local" [(ngModel)]="newEvent.eventDate" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-emerald-500 outline-none" [style.color-scheme]="'dark'">
-      </div>
-    </div>
-    
-    <div class="p-4 border-t border-gray-700 bg-gray-800/50 flex gap-3 justify-end">
-      <button (click)="showAddModal = false" class="px-5 py-2 rounded-xl text-gray-400 hover:text-white font-medium transition-colors">
-        Cancelar
-      </button>
-      <button (click)="saveEvent()" [disabled]="!newEvent.homeTeam || !newEvent.awayTeam || !newEvent.league || !newEvent.eventDate" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors shadow-lg shadow-emerald-500/20">
-        Guardar Evento
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Picks Modal -->
-<div *ngIf="showPicksModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-  <div class="bg-gray-800 rounded-2xl w-full max-w-2xl border border-gray-700 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-    <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-800/50">
-      <h3 class="text-lg font-bold text-white">Picks: <span class="text-emerald-400">{{selectedPicksEventName}}</span></h3>
-      <button (click)="showPicksModal = false" class="text-gray-400 hover:text-white transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
-    
-    <div class="p-6 overflow-auto flex-1">
-      <div *ngIf="selectedPicksGroups.length === 0" class="text-center py-8 text-gray-500">
-        <svg class="w-12 h-12 mb-3 mx-auto opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <p>Cargando picks o no hay picks registrados para este partido en esta fecha.</p>
-      </div>
-
-      <div *ngIf="selectedPicksGroups.length > 0" class="space-y-6">
-        <div *ngFor="let group of selectedPicksGroups" class="space-y-3">
-          <!-- Group Header (Only show if it's a Bet Builder) -->
-          <div *ngIf="group.isBetBuilder" class="flex flex-col sm:flex-row sm:items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-2 mb-2 gap-2">
-            <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 text-blue-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-              {{group.name}} ({{group.picks.length}} picks)
-            </h4>
-            <div class="flex items-center gap-3">
-              <span *ngIf="group.totalOdds" class="text-lg font-bold text-emerald-400">&#64;{{group.totalOdds}}</span>
-              
-              <span *ngIf="group.groupResult === 'PENDIENTE'" class="px-2 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded text-xs font-medium">Pendiente</span>
-              <span *ngIf="group.groupResult === 'GANADA'" class="px-2 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded text-xs font-medium">Ganada</span>
-              <span *ngIf="group.groupResult === 'PERDIDA'" class="px-2 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded text-xs font-medium">Perdida</span>
-              <span *ngIf="group.groupResult === 'NULA'" class="px-2 py-1 bg-gray-500/10 text-gray-400 border border-gray-500/20 rounded text-xs font-medium">Nula</span>
-            </div>
-          </div>
-
-          <div *ngFor="let pick of group.picks" class="bg-gray-900 border border-gray-700 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden" [ngClass]="{'ml-4 border-l-2 border-l-blue-500/50': group.isBetBuilder}">
-            <!-- Background highlight for bet builder legs -->
-            <div *ngIf="group.isBetBuilder" class="absolute inset-0 bg-blue-500/5 pointer-events-none"></div>
+      <!-- Days Grid -->
+      <div class="flex-1 overflow-y-auto">
+        <div class="grid grid-cols-7 h-full">
+          <div *ngFor="let day of days; let i = index" 
+               class="min-h-[120px] border-b border-r border-gray-800/50 p-2 relative transition-colors flex flex-col"
+               [ngClass]="{
+                 'bg-[#0f172a]/50': !day.isCurrentMonth,
+                 'bg-[#111827]': day.isCurrentMonth,
+                 'ring-1 ring-inset ring-emerald-500/50 bg-emerald-900/5': day.isToday
+               }">
             
-            <div class="relative z-10">
-              <div class="text-xs font-medium text-gray-400 mb-1">{{pick.market}}</div>
-              <div class="text-base font-bold text-white">{{pick.pick}}</div>
+            <div class="flex flex-col mb-1 shrink-0">
+              <span class="text-sm font-semibold" [ngClass]="day.isCurrentMonth ? 'text-gray-300' : 'text-gray-600'">
+                {{ day.date.getDate() }}
+              </span>
+              <span class="text-[10px] text-gray-500">{{day.events.length}} eventos</span>
+            </div>
+
+            <!-- Event Chips -->
+            <div class="flex flex-col gap-1.5 flex-1 overflow-y-auto pr-1">
+              <div *ngFor="let evt of day.events" class="bg-[#1e293b] rounded-lg p-2 border border-gray-700/50 shadow-sm hover:border-gray-500 transition-colors cursor-pointer group shrink-0">
+                <!-- League -->
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  <span class="text-xs">{{evt.leagueIcon}}</span>
+                  <span class="text-[10px] text-gray-400 font-medium truncate" [title]="evt.leagueName">{{evt.leagueName}}</span>
+                </div>
+                <!-- Match -->
+                <div class="text-xs text-gray-200 font-semibold mb-2 leading-tight">
+                  {{evt.eventStr}}
+                </div>
+                <!-- Footer: Status & Odds -->
+                <div class="flex items-center justify-between mt-auto">
+                  <span class="text-[9px] px-2 py-0.5 rounded-full border font-semibold" [ngClass]="getResultColor(evt.result)">
+                    {{getResultText(evt.result)}}
+                  </span>
+                  <span class="text-xs text-gray-400 font-medium font-mono" *ngIf="evt.odds">{{evt.odds | number:'1.2-2'}}</span>
+                </div>
+              </div>
             </div>
             
-            <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end relative z-10">
-              <!-- Only show odds if it's > 0 or not a betbuilder where odds are missing -->
-              <div *ngIf="pick.odds && !group.isBetBuilder" class="text-lg font-bold text-emerald-400">&#64;{{pick.odds}}</div>
-              <div *ngIf="group.isBetBuilder || !pick.odds" class="text-sm font-medium text-gray-500 italic">Sin cuota ind.</div>
-              
-              <span *ngIf="pick.result === 'PENDIENTE'" class="px-3 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-lg text-sm font-medium">Pendiente</span>
-              <span *ngIf="pick.result === 'GANADA'" class="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg text-sm font-medium">Ganada</span>
-              <span *ngIf="pick.result === 'PERDIDA'" class="px-3 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg text-sm font-medium">Perdida</span>
-              <span *ngIf="pick.result === 'NULA'" class="px-3 py-1 bg-gray-500/10 text-gray-400 border border-gray-500/20 rounded-lg text-sm font-medium">Nula</span>
-            </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="w-80 flex flex-col gap-6 overflow-y-auto pr-2 shrink-0">
+      <!-- Summary -->
+      <div>
+        <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Resumen del mes
+        </h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700 text-center flex flex-col justify-center">
+            <span class="text-2xl font-bold text-white">{{summary.total}}</span>
+            <span class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Total Apuestas</span>
+          </div>
+          <div class="bg-emerald-900/10 p-4 rounded-xl border border-emerald-500/20 text-center flex flex-col justify-center">
+            <span class="text-2xl font-bold text-emerald-400">{{summary.won}}</span>
+            <span class="text-[10px] text-emerald-500/70 mt-1 uppercase tracking-wider">Ganadas</span>
+          </div>
+          <div class="bg-red-900/10 p-4 rounded-xl border border-red-500/20 text-center flex flex-col justify-center">
+            <span class="text-2xl font-bold text-red-400">{{summary.lost}}</span>
+            <span class="text-[10px] text-red-500/70 mt-1 uppercase tracking-wider">Perdidas</span>
+          </div>
+          <div class="bg-blue-900/10 p-4 rounded-xl border border-blue-500/20 text-center flex flex-col justify-center">
+            <span class="text-2xl font-bold text-blue-400">{{summary.pending}}</span>
+            <span class="text-[10px] text-blue-500/70 mt-1 uppercase tracking-wider">Pendientes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Events -->
+      <div>
+        <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Próximos eventos
+        </h3>
+        
+        <div *ngIf="upcomingEvents.length === 0" class="text-xs text-gray-500 italic p-4 text-center bg-gray-800/30 rounded-xl border border-gray-800">
+          No hay eventos pendientes.
+        </div>
+        
+        <div class="flex flex-col gap-2">
+          <div *ngFor="let evt of upcomingEvents" class="bg-gray-800/50 p-3 rounded-xl border border-gray-700 flex items-center gap-3 group hover:border-gray-500 transition-colors cursor-pointer">
+            <div class="w-10 h-10 rounded-lg bg-gray-900 border border-gray-700 flex items-center justify-center text-lg shadow-inner shrink-0">
+              {{evt.leagueIcon}}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[10px] text-gray-400 mb-0.5 truncate">{{evt.dateStr}} &bull; {{evt.leagueName}}</div>
+              <div class="text-xs font-semibold text-gray-200 truncate">{{evt.eventStr}}</div>
+            </div>
+            <div class="flex flex-col items-end justify-center shrink-0">
+              <div class="bg-gray-900 text-emerald-400 text-xs font-mono font-bold px-2 py-1 rounded-md border border-gray-700 shadow-inner group-hover:border-emerald-500/30 transition-colors">
+                {{evt.odds | number:'1.2-2'}}
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Legend -->
+      <div class="bg-gray-800/30 p-4 rounded-xl border border-gray-800">
+        <h4 class="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">Leyenda</h4>
+        <div class="flex flex-col gap-2 text-xs text-gray-300">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
+            Apuesta ganada
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
+            Apuesta perdida
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></div>
+            Apuesta pendiente
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+            Apuesta nula
+          </div>
+        </div>
+      </div>
+      
     </div>
   </div>
 </div>
