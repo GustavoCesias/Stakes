@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TicketService, Ticket } from '../../services/ticket.service';
@@ -47,6 +48,7 @@ export interface CalendarDay {
 })
 export class CalendarComponent implements OnInit {
   ticketService = inject(TicketService);
+  router = inject(Router);
   
   currentDate: Date = new Date();
   days: CalendarDay[] = [];
@@ -57,6 +59,7 @@ export class CalendarComponent implements OnInit {
 
   // Sidebar Summary
   monthTickets: Ticket[] = [];
+  rawTickets: Ticket[] = []; // Store raw tickets to re-apply filters without fetching
   summary = {
     total: 0,
     won: 0,
@@ -66,10 +69,22 @@ export class CalendarComponent implements OnInit {
   };
   upcomingEvents: CalendarSelection[] = [];
 
+  // Filters
+  showFiltersModal = false;
+  filters = {
+    ganadas: true,
+    perdidas: true,
+    pendientes: true,
+    nulas: true,
+    simples: true,
+    betbuilders: true
+  };
+
   ngOnInit() {
     this.currentDate.setDate(1); 
     this.ticketService.getTickets().subscribe(tickets => {
-      this.processData(tickets);
+      this.rawTickets = tickets;
+      this.processData(this.rawTickets);
     });
   }
   
@@ -80,13 +95,13 @@ export class CalendarComponent implements OnInit {
 
   changeMonth(offset: number) {
     this.currentDate.setMonth(this.currentDate.getMonth() + offset);
-    this.ticketService.getTickets().subscribe(tickets => this.processData(tickets));
+    this.processData(this.rawTickets);
   }
   
   goToToday() {
     this.currentDate = new Date();
     this.currentDate.setDate(1);
-    this.ticketService.getTickets().subscribe(tickets => this.processData(tickets));
+    this.processData(this.rawTickets);
   }
   
   setViewMode(mode: 'events' | 'profits') {
@@ -117,7 +132,22 @@ export class CalendarComponent implements OnInit {
       totalProfit: monthProfit
     };
     
-    const allSelections = this.extractEvents(allTickets);
+    // 2. Extract all selections and filter them based on user filters
+    let allSelections = this.extractEvents(allTickets);
+    allSelections = allSelections.filter(sel => {
+      // Filter by type
+      if (sel.isBetBuilder && !this.filters.betbuilders) return false;
+      if (!sel.isBetBuilder && !this.filters.simples) return false;
+      
+      // Filter by result
+      const res = sel.result.toUpperCase();
+      if (res === 'GANADA' && !this.filters.ganadas) return false;
+      if (res === 'PERDIDA' && !this.filters.perdidas) return false;
+      if (res === 'PENDIENTE' && !this.filters.pendientes) return false;
+      if (res === 'NULA' && !this.filters.nulas) return false;
+
+      return true;
+    });
     
     const eventMap = new Map<string, CalendarEventAggregate>();
     allSelections.forEach(sel => {
@@ -271,6 +301,15 @@ export class CalendarComponent implements OnInit {
     this.sidebarState = 'summary';
     this.selectedDay = null;
     this.days.forEach(d => d.isSelected = false);
+  }
+
+  toggleFilter(key: keyof typeof this.filters) {
+    this.filters[key] = !this.filters[key];
+    this.processData(this.rawTickets);
+  }
+
+  addMatch() {
+    this.router.navigate(['/gestor-tickets']);
   }
   
   getIconForSport(sport: string | undefined): string {

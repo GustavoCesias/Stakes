@@ -45,12 +45,12 @@
     </div>
 
     <!-- Actions -->
-    <div class="flex items-center gap-3">
-      <button class="px-4 py-2 bg-gray-800/50 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg border border-gray-700 transition-colors flex items-center gap-2">
+    <div class="flex items-center gap-3 relative">
+      <button (click)="showFiltersModal = true" class="px-4 py-2 bg-gray-800/50 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg border border-gray-700 transition-colors flex items-center gap-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
         Filtros
       </button>
-      <button class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 opacity-50 cursor-not-allowed" title="Usa el Gestor de Tickets para añadir apuestas">
+      <button (click)="addMatch()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         Añadir Partido
       </button>
@@ -226,6 +226,73 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- Filters Modal -->
+<div *ngIf="showFiltersModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+  <div class="bg-gray-900 rounded-2xl w-full max-w-sm border border-gray-700 overflow-hidden shadow-2xl flex flex-col">
+    <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-800/30">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+        Filtros de Calendario
+      </h3>
+      <button (click)="showFiltersModal = false" class="text-gray-400 hover:text-white transition-colors p-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    
+    <div class="p-5 flex flex-col gap-5 text-sm">
+      <!-- Result Filters -->
+      <div>
+        <h4 class="text-gray-400 font-semibold mb-3 uppercase tracking-wider text-xs">Por Estado</h4>
+        <div class="flex flex-col gap-2.5">
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <input type="checkbox" [checked]="filters.ganadas" (change)="toggleFilter('ganadas')" class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900">
+            <span class="text-gray-300 group-hover:text-white transition-colors">Apuestas Ganadas</span>
+            <div class="w-2 h-2 rounded-full bg-emerald-500 ml-auto"></div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <input type="checkbox" [checked]="filters.perdidas" (change)="toggleFilter('perdidas')" class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900">
+            <span class="text-gray-300 group-hover:text-white transition-colors">Apuestas Perdidas</span>
+            <div class="w-2 h-2 rounded-full bg-red-500 ml-auto"></div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <input type="checkbox" [checked]="filters.pendientes" (change)="toggleFilter('pendientes')" class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900">
+            <span class="text-gray-300 group-hover:text-white transition-colors">Apuestas Pendientes</span>
+            <div class="w-2 h-2 rounded-full bg-blue-500 ml-auto"></div>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <input type="checkbox" [checked]="filters.nulas" (change)="toggleFilter('nulas')" class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900">
+            <span class="text-gray-300 group-hover:text-white transition-colors">Apuestas Nulas</span>
+            <div class="w-2 h-2 rounded-full bg-gray-500 ml-auto"></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="h-px bg-gray-800 w-full"></div>
+
+      <!-- Type Filters -->
+      <div>
+        <h4 class="text-gray-400 font-semibold mb-3 uppercase tracking-wider text-xs">Por Tipo</h4>
+        <div class="flex flex-col gap-2.5">
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <input type="checkbox" [checked]="filters.simples" (change)="toggleFilter('simples')" class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900">
+            <span class="text-gray-300 group-hover:text-white transition-colors">Simples / Combinadas</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <input type="checkbox" [checked]="filters.betbuilders" (change)="toggleFilter('betbuilders')" class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900">
+            <span class="text-gray-300 group-hover:text-white transition-colors">Bet Builders</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="p-4 border-t border-gray-800 bg-gray-800/30">
+      <button (click)="showFiltersModal = false" class="w-full py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
+        Aplicar Filtros
+      </button>
     </div>
   </div>
 </div>
