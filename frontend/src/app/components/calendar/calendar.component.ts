@@ -25,6 +25,7 @@ export interface CalendarEventAggregate {
   dateStr: string;
   ticketsCount: number;
   selections: CalendarSelection[];
+  tickets: Ticket[]; // Array of unique tickets associated with this event
   result: string; // Aggregate result for the dot color
 }
 
@@ -160,6 +161,11 @@ export class CalendarComponent implements OnInit {
       return true;
     });
     
+    const ticketMap = new Map<number, Ticket>();
+    allTickets.forEach(t => {
+      if (t.id) ticketMap.set(t.id, t);
+    });
+    
     const eventMap = new Map<string, CalendarEventAggregate>();
     allSelections.forEach(sel => {
        const key = `${sel.dateStr}_${sel.eventStr}`;
@@ -171,11 +177,18 @@ export class CalendarComponent implements OnInit {
            dateStr: sel.dateStr,
            ticketsCount: 0,
            selections: [],
+           tickets: [],
            result: sel.result
          });
        }
        const agg = eventMap.get(key)!;
-       agg.ticketsCount++;
+       
+       const ticket = ticketMap.get(sel.ticketId);
+       if (ticket && !agg.tickets.some(t => t.id === ticket.id)) {
+           agg.tickets.push(ticket);
+       }
+       
+       agg.ticketsCount = agg.tickets.length;
        agg.selections.push(sel);
        // Simple consensus logic: if at least one is pending, show pending color
        if (sel.result === 'PENDIENTE') {

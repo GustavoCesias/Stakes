@@ -236,7 +236,28 @@
                   <span class="text-xs text-gray-400 font-medium">{{agg.leagueName}}</span>
                </div>
                <div class="text-sm font-bold text-gray-200" [title]="agg.eventStr">{{agg.eventStr}}</div>
-               <div class="text-xs text-gray-500">{{agg.ticketsCount}} {{agg.ticketsCount === 1 ? 'ticket asociado' : 'tickets asociados'}}</div>
+               <details class="group mt-1">
+                  <summary class="text-xs text-gray-500 cursor-pointer hover:text-emerald-400 transition-colors list-none flex items-center gap-1 select-none">
+                     <svg class="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                     {{agg.ticketsCount}} {{agg.ticketsCount === 1 ? 'ticket asociado' : 'tickets asociados'}}
+                  </summary>
+                  <div class="mt-2 pl-4 border-l-2 border-gray-700 flex flex-col gap-2">
+                     <div *ngFor="let t of agg.tickets" class="flex justify-between items-center text-xs bg-gray-900/50 p-2 rounded-lg">
+                        <div class="flex items-center gap-1.5 truncate pr-2">
+                           <div class="w-1.5 h-1.5 rounded-full shrink-0" [ngClass]="getDotColor(t.result)"></div>
+                           <span class="text-gray-400 truncate">{{t.type}}</span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                          <span class="font-medium" [ngClass]="{'text-emerald-400': (t.profit || 0) > 0, 'text-red-400': (t.profit || 0) < 0, 'text-blue-400': t.result==='PENDIENTE', 'text-gray-400': t.result==='NULA'}">
+                            {{(t.profit || 0) > 0 ? '+' : ''}}{{t.profit || 0 | currency:'USD'}}
+                          </span>
+                          <button (click)="viewTicket(t)" class="text-gray-500 hover:text-emerald-400 transition-colors bg-gray-800 p-1 rounded-md" title="Ver detalle del ticket">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          </button>
+                        </div>
+                     </div>
+                  </div>
+               </details>
             </div>
           </ng-container>
 
