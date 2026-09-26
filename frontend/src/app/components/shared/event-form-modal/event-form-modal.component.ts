@@ -60,9 +60,12 @@ export class EventFormModalComponent implements OnInit {
       } as League;
     }
 
-    this.newEvent.league = league;
+    const payload = { ...this.newEvent, league };
+    if (payload.eventDate && !payload.eventDate.includes('T')) {
+      payload.eventDate = `${payload.eventDate}T00:00:00`;
+    }
 
-    this.calendarService.createEvent(this.newEvent as SportEvent).subscribe({
+    this.calendarService.createEvent(payload as SportEvent).subscribe({
       next: (res) => {
         this.saved.emit(res);
         this.close.emit();
