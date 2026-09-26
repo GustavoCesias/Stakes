@@ -83,7 +83,7 @@ export class CalendarComponent implements OnInit {
   ngOnInit() {
     this.currentDate.setDate(1); 
     this.ticketService.getTickets().subscribe(tickets => {
-      this.rawTickets = tickets;
+      this.rawTickets = tickets.filter(t => !t.originalTipster);
       this.processData(this.rawTickets);
     });
   }
