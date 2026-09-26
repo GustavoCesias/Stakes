@@ -206,28 +206,38 @@ export class CalendarComponent implements OnInit {
   }
   
   getTicketSummaryEvents(t: Ticket): string[] {
-    const events = new Set<string>();
+    const bbEvents = new Set<string>();
     
-    if (t.selections) {
-      t.selections.forEach(sel => {
-        if (sel.tip?.event) {
-          events.add(this.formatEventStr(sel.tip.event));
-        }
-      });
-    }
-    
+    // First, collect all BetBuilder events
     if (t.betBuilders) {
       t.betBuilders.forEach(bb => {
         if (bb.selections && bb.selections.length > 0) {
            const eventName = this.formatEventStr(bb.selections[0].tip?.event || '');
            if (eventName) {
-             events.add(`${eventName} (Bet Builder)`);
+             bbEvents.add(eventName);
            }
         }
       });
     }
+
+    const finalEvents = new Set<string>();
     
-    return Array.from(events);
+    // Then collect regular selections, only if they are not part of a BetBuilder
+    if (t.selections) {
+      t.selections.forEach(sel => {
+        if (sel.tip?.event) {
+          const eventName = this.formatEventStr(sel.tip.event);
+          if (!bbEvents.has(eventName)) {
+            finalEvents.add(eventName);
+          }
+        }
+      });
+    }
+    
+    // Add the BetBuilders formatted properly
+    bbEvents.forEach(evt => finalEvents.add(`${evt} (Bet Builder)`));
+    
+    return Array.from(finalEvents);
   }
 
   extractEvents(tickets: Ticket[]): CalendarSelection[] {
