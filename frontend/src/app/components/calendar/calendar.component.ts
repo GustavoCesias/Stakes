@@ -3,8 +3,10 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TicketService, Ticket } from '../../services/ticket.service';
+import { CalendarService, SportEvent } from '../../services/calendar.service';
 import { TicketDetailModalComponent } from '../shared/ticket-detail-modal/ticket-detail-modal.component';
 import { TicketFormModalComponent } from '../shared/ticket-form-modal/ticket-form-modal.component';
+import { EventFormModalComponent } from '../shared/event-form-modal/event-form-modal.component';
 
 export interface CalendarSelection {
   ticketId: number;
@@ -46,22 +48,25 @@ export interface CalendarDay {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, TicketDetailModalComponent, TicketFormModalComponent],
+  imports: [CommonModule, FormsModule, TicketDetailModalComponent, TicketFormModalComponent, EventFormModalComponent],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.css'
 })
 export class CalendarComponent implements OnInit {
   ticketService = inject(TicketService);
+  calendarService = inject(CalendarService);
   router = inject(Router);
   
   currentDate: Date = new Date();
   days: CalendarDay[] = [];
+  calendarEvents: SportEvent[] = [];
   
   viewMode: 'events' | 'tickets' | 'profits' = 'events'; 
   sidebarState: 'summary' | 'dayDetail' = 'summary';
   selectedDay: CalendarDay | null = null;
   selectedTicketForView: Ticket | null = null;
   showTicketForm = false;
+  showEventForm = false;
 
   // Sidebar Summary
   monthTickets: Ticket[] = [];
@@ -94,6 +99,15 @@ export class CalendarComponent implements OnInit {
   loadTickets() {
     this.ticketService.getTickets().subscribe(tickets => {
       this.rawTickets = tickets.filter(t => !t.originalTipster);
+      this.loadEventsAndProcess();
+    });
+  }
+
+  loadEventsAndProcess() {
+    const dStart = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+    const dEnd = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0);
+    this.calendarService.getEvents(dStart.toISOString(), dEnd.toISOString()).subscribe(events => {
+      this.calendarEvents = events;
       this.processData(this.rawTickets);
     });
   }
@@ -105,13 +119,13 @@ export class CalendarComponent implements OnInit {
 
   changeMonth(offset: number) {
     this.currentDate.setMonth(this.currentDate.getMonth() + offset);
-    this.processData(this.rawTickets);
+    this.loadEventsAndProcess();
   }
   
   goToToday() {
     this.currentDate = new Date();
     this.currentDate.setDate(1);
-    this.processData(this.rawTickets);
+    this.loadEventsAndProcess();
   }
   
   setViewMode(mode: 'events' | 'tickets' | 'profits') {
@@ -173,6 +187,24 @@ export class CalendarComponent implements OnInit {
     });
     
     const eventMap = new Map<string, CalendarEventAggregate>();
+    
+    // Add real database calendar events first
+    this.calendarEvents.forEach(evt => {
+       const key = `${evt.eventDate.substring(0,10)}_${evt.homeTeam} vs ${evt.awayTeam}`;
+       if (!eventMap.has(key)) {
+         eventMap.set(key, {
+           eventStr: `${evt.homeTeam} vs ${evt.awayTeam}`,
+           leagueName: evt.league?.name || 'N/A',
+           leagueIcon: this.getIconForSport(evt.league?.sport?.name),
+           dateStr: evt.eventDate.substring(0,10),
+           ticketsCount: 0,
+           selections: [],
+           tickets: [],
+           result: 'PENDIENTE'
+         });
+       }
+    });
+
     allSelections.forEach(sel => {
        const key = `${sel.dateStr}_${sel.eventStr}`;
        if (!eventMap.has(key)) {
@@ -384,12 +416,21 @@ export class CalendarComponent implements OnInit {
   }
 
   addMatch() {
-    this.showTicketForm = true;
+    if (this.viewMode === 'events') {
+      this.showEventForm = true;
+    } else {
+      this.showTicketForm = true;
+    }
   }
 
   onTicketSaved(ticket: Ticket) {
     this.showTicketForm = false;
-    this.loadTickets(); // Refresh calendar to show the newly added ticket
+    this.loadTickets(); 
+  }
+  
+  onEventSaved(event: SportEvent) {
+    this.showEventForm = false;
+    this.loadEventsAndProcess();
   }
   
   getIconForSport(sport: string | undefined): string {

@@ -385,3 +385,11 @@
     (saved)="onTicketSaved($event)">
   </app-ticket-form-modal>
 }
+
+<!-- Event Form Modal -->
+@if (showEventForm) {
+  <app-event-form-modal
+    (close)="showEventForm = false"
+    (saved)="onEventSaved($event)">
+  </app-event-form-modal>
+}
