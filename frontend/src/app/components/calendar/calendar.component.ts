@@ -205,6 +205,31 @@ export class CalendarComponent implements OnInit {
     return '';
   }
   
+  getTicketSummaryEvents(t: Ticket): string[] {
+    const events = new Set<string>();
+    
+    if (t.selections) {
+      t.selections.forEach(sel => {
+        if (sel.tip?.event) {
+          events.add(this.formatEventStr(sel.tip.event));
+        }
+      });
+    }
+    
+    if (t.betBuilders) {
+      t.betBuilders.forEach(bb => {
+        if (bb.selections && bb.selections.length > 0) {
+           const eventName = this.formatEventStr(bb.selections[0].tip?.event || '');
+           if (eventName) {
+             events.add(`${eventName} (Bet Builder)`);
+           }
+        }
+      });
+    }
+    
+    return Array.from(events);
+  }
+
   extractEvents(tickets: Ticket[]): CalendarSelection[] {
     const evts: CalendarSelection[] = [];
     tickets.forEach(t => {
