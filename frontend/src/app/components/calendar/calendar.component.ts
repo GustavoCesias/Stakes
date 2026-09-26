@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TicketService, Ticket } from '../../services/ticket.service';
+import { TicketDetailModalComponent } from '../shared/ticket-detail-modal/ticket-detail-modal.component';
 
 export interface CalendarSelection {
   ticketId: number;
@@ -43,7 +44,7 @@ export interface CalendarDay {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TicketDetailModalComponent],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.css'
 })
@@ -57,6 +58,7 @@ export class CalendarComponent implements OnInit {
   viewMode: 'events' | 'profits' = 'events'; 
   sidebarState: 'summary' | 'dayDetail' = 'summary';
   selectedDay: CalendarDay | null = null;
+  selectedTicketForView: Ticket | null = null;
 
   // Sidebar Summary
   monthTickets: Ticket[] = [];
@@ -107,6 +109,14 @@ export class CalendarComponent implements OnInit {
   
   setViewMode(mode: 'events' | 'profits') {
     this.viewMode = mode;
+  }
+
+  viewTicket(ticket: Ticket) {
+    this.selectedTicketForView = ticket;
+  }
+
+  closeTicketView() {
+    this.selectedTicketForView = null;
   }
 
   processData(allTickets: Ticket[]) {

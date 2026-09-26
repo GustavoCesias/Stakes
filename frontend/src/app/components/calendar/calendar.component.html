@@ -207,9 +207,14 @@
             No hay tickets para este día.
           </div>
           <div *ngFor="let t of selectedDay.tickets" class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
-             <div class="flex items-center gap-1.5 mb-1 text-xs">
-                <div class="w-2 h-2 rounded-full shrink-0" [ngClass]="getDotColor(t.result)"></div>
-                <span class="text-gray-400 font-medium truncate">{{t.type}}</span>
+             <div class="flex items-center justify-between gap-1.5 mb-1 text-xs">
+                <div class="flex items-center gap-1.5">
+                   <div class="w-2 h-2 rounded-full shrink-0" [ngClass]="getDotColor(t.result)"></div>
+                   <span class="text-gray-400 font-medium truncate">{{t.type}}</span>
+                </div>
+                <button (click)="viewTicket(t)" class="text-gray-400 hover:text-emerald-400 transition-colors" title="Ver detalle del ticket">
+                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                </button>
              </div>
              
              <!-- Display the matches inside the ticket -->
@@ -306,3 +311,11 @@
     </div>
   </div>
 </div>
+
+<!-- Ticket Detail Modal -->
+@if (selectedTicketForView) {
+  <app-ticket-detail-modal 
+    [ticket]="selectedTicketForView" 
+    (close)="closeTicketView()">
+  </app-ticket-detail-modal>
+}
