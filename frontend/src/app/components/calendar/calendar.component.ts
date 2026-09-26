@@ -55,7 +55,7 @@ export class CalendarComponent implements OnInit {
   currentDate: Date = new Date();
   days: CalendarDay[] = [];
   
-  viewMode: 'events' | 'profits' = 'events'; 
+  viewMode: 'events' | 'tickets' | 'profits' = 'events'; 
   sidebarState: 'summary' | 'dayDetail' = 'summary';
   selectedDay: CalendarDay | null = null;
   selectedTicketForView: Ticket | null = null;
@@ -107,7 +107,7 @@ export class CalendarComponent implements OnInit {
     this.processData(this.rawTickets);
   }
   
-  setViewMode(mode: 'events' | 'profits') {
+  setViewMode(mode: 'events' | 'tickets' | 'profits') {
     this.viewMode = mode;
   }
 

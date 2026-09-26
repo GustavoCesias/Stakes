@@ -37,6 +37,11 @@
               [ngClass]="viewMode === 'events' ? 'bg-emerald-500 text-white' : 'text-gray-400 hover:text-white'">
         Eventos
       </button>
+      <button (click)="setViewMode('tickets')" 
+              class="px-4 py-1.5 rounded-md transition-colors shadow-lg"
+              [ngClass]="viewMode === 'tickets' ? 'bg-emerald-500 text-white' : 'text-gray-400 hover:text-white'">
+        Tickets
+      </button>
       <button (click)="setViewMode('profits')" 
               class="px-4 py-1.5 rounded-md transition-colors shadow-lg"
               [ngClass]="viewMode === 'profits' ? 'bg-emerald-500 text-white' : 'text-gray-400 hover:text-white'">
@@ -95,7 +100,7 @@
               </span>
             </div>
 
-            <!-- Event Chips View -->
+            <!-- Event Chips View (Events Mode) -->
             <div *ngIf="viewMode === 'events'" class="flex flex-col gap-1 flex-1 overflow-hidden pointer-events-none mt-1">
               <div *ngFor="let agg of day.aggregatedEvents | slice:0:2" 
                    class="flex items-center gap-1.5 px-1 py-0.5 rounded bg-gray-800/50">
@@ -106,6 +111,22 @@
               <div *ngIf="day.aggregatedEvents.length > 2" 
                    class="text-[10px] text-emerald-500 font-medium px-1 mt-1">
                 +{{day.aggregatedEvents.length - 2}} más
+              </div>
+            </div>
+
+            <!-- Tickets Chips View (Tickets Mode) -->
+            <div *ngIf="viewMode === 'tickets'" class="flex flex-col gap-1 flex-1 overflow-hidden pointer-events-none mt-1">
+              <div *ngFor="let t of day.tickets | slice:0:2" 
+                   class="flex items-center gap-1.5 px-1 py-0.5 rounded bg-gray-800/50">
+                <div class="w-1.5 h-1.5 rounded-full shrink-0" [ngClass]="getDotColor(t.result)"></div>
+                <span class="text-[10px] text-gray-300 truncate font-medium">
+                  {{ t.type === 'Simple' || t.type === 'Bet Builder Puro' ? getTicketSummaryEvents(t)[0] : t.type + ' (' + getTicketSummaryEvents(t).length + ' eventos)' }}
+                </span>
+              </div>
+              
+              <div *ngIf="day.tickets.length > 2" 
+                   class="text-[10px] text-emerald-500 font-medium px-1 mt-1">
+                +{{day.tickets.length - 2}} más
               </div>
             </div>
 
@@ -203,38 +224,57 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <div *ngIf="selectedDay.tickets.length === 0" class="text-xs text-gray-500 italic p-4 text-center bg-gray-800/30 rounded-xl border border-gray-800">
-            No hay tickets para este día.
-          </div>
-          <div *ngFor="let t of selectedDay.tickets" class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
-             <div class="flex items-center justify-between gap-1.5 mb-1 text-xs">
-                <div class="flex items-center gap-1.5">
-                   <div class="w-2 h-2 rounded-full shrink-0" [ngClass]="getDotColor(t.result)"></div>
-                   <span class="text-gray-400 font-medium truncate">{{t.type}}</span>
-                </div>
-                <button (click)="viewTicket(t)" class="text-gray-400 hover:text-emerald-400 transition-colors" title="Ver detalle del ticket">
-                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                </button>
-             </div>
-             
-             <!-- Display the matches inside the ticket -->
-             <div class="flex flex-col gap-1 mb-2">
-                <div *ngFor="let evt of getTicketSummaryEvents(t)" class="text-sm font-bold text-gray-200 truncate" [title]="evt">
-                   {{evt}}
-                </div>
-             </div>
-             
-             <div class="flex justify-between items-center text-xs">
-                <span class="text-gray-400 font-mono">{{t.stake || 0 | currency:'USD'}} &#64; {{t.totalOdds || 0 | number:'1.2-2'}}</span>
-                <span class="font-bold" [ngClass]="{'text-emerald-400': (t.profit || 0) > 0, 'text-red-400': (t.profit || 0) < 0, 'text-blue-400': t.result==='PENDIENTE', 'text-gray-400': t.result==='NULA'}">
-                  <ng-container *ngIf="t.result === 'PENDIENTE'">Pendiente</ng-container>
-                  <ng-container *ngIf="t.result === 'NULA'">Anulada</ng-container>
-                  <ng-container *ngIf="t.result === 'GANADA' || t.result === 'PERDIDA'">
-                     {{(t.profit || 0) > 0 ? '+' : ''}}{{t.profit || 0 | currency:'USD'}}
-                  </ng-container>
-                </span>
-             </div>
-          </div>
+          
+          <!-- EVENTS View (Matches) -->
+          <ng-container *ngIf="viewMode === 'events'">
+            <div *ngIf="selectedDay.aggregatedEvents.length === 0" class="text-xs text-gray-500 italic p-4 text-center bg-gray-800/30 rounded-xl border border-gray-800">
+              No hay eventos para este día.
+            </div>
+            <div *ngFor="let agg of selectedDay.aggregatedEvents" class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50 flex flex-col gap-2">
+               <div class="flex items-center gap-2">
+                  <div class="w-2 h-2 rounded-full shrink-0" [ngClass]="getDotColor(agg.result)"></div>
+                  <span class="text-xs text-gray-400 font-medium">{{agg.leagueName}}</span>
+               </div>
+               <div class="text-sm font-bold text-gray-200" [title]="agg.eventStr">{{agg.eventStr}}</div>
+               <div class="text-xs text-gray-500">{{agg.ticketsCount}} {{agg.ticketsCount === 1 ? 'ticket asociado' : 'tickets asociados'}}</div>
+            </div>
+          </ng-container>
+
+          <!-- TICKETS & PROFITS View -->
+          <ng-container *ngIf="viewMode === 'tickets' || viewMode === 'profits'">
+            <div *ngIf="selectedDay.tickets.length === 0" class="text-xs text-gray-500 italic p-4 text-center bg-gray-800/30 rounded-xl border border-gray-800">
+              No hay tickets para este día.
+            </div>
+            <div *ngFor="let t of selectedDay.tickets" class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50">
+               <div class="flex items-center justify-between gap-1.5 mb-1 text-xs">
+                  <div class="flex items-center gap-1.5">
+                     <div class="w-2 h-2 rounded-full shrink-0" [ngClass]="getDotColor(t.result)"></div>
+                     <span class="text-gray-400 font-medium truncate">{{t.type}}</span>
+                  </div>
+                  <button (click)="viewTicket(t)" class="text-gray-400 hover:text-emerald-400 transition-colors" title="Ver detalle del ticket">
+                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  </button>
+               </div>
+               
+               <!-- Display the matches inside the ticket -->
+               <div class="flex flex-col gap-1 mb-2">
+                  <div *ngFor="let evt of getTicketSummaryEvents(t)" class="text-sm font-bold text-gray-200 truncate" [title]="evt">
+                     {{evt}}
+                  </div>
+               </div>
+               
+               <div class="flex justify-between items-center text-xs">
+                  <span class="text-gray-400 font-mono">{{t.stake || 0 | currency:'USD'}} &#64; {{t.totalOdds || 0 | number:'1.2-2'}}</span>
+                  <span class="font-bold" [ngClass]="{'text-emerald-400': (t.profit || 0) > 0, 'text-red-400': (t.profit || 0) < 0, 'text-blue-400': t.result==='PENDIENTE', 'text-gray-400': t.result==='NULA'}">
+                    <ng-container *ngIf="t.result === 'PENDIENTE'">Pendiente</ng-container>
+                    <ng-container *ngIf="t.result === 'NULA'">Anulada</ng-container>
+                    <ng-container *ngIf="t.result === 'GANADA' || t.result === 'PERDIDA'">
+                       {{(t.profit || 0) > 0 ? '+' : ''}}{{t.profit || 0 | currency:'USD'}}
+                    </ng-container>
+                  </span>
+               </div>
+            </div>
+          </ng-container>
         </div>
       </div>
 
