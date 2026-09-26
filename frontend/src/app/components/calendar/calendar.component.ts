@@ -34,6 +34,7 @@ export interface CalendarDay {
   isToday: boolean;
   aggregatedEvents: CalendarEventAggregate[];
   selections: CalendarSelection[]; // Raw selections for this day
+  tickets: Ticket[]; // The actual tickets affecting this day
   profit: number;
   hasResolvedTickets: boolean;
   isSelected?: boolean;
@@ -198,61 +199,42 @@ export class CalendarComponent implements OnInit {
     const evts: CalendarSelection[] = [];
     tickets.forEach(t => {
       const ticketDateStr = this.normalizeDate(t.date);
-      const isMulti = ['combinada', 'mixta', 'sistema'].includes(t.type?.toLowerCase() || '');
       
-      if (isMulti) {
-        // Combinada, Mixta, Sistema -> Group as a single event in the calendar
-        const numEvents = (t.selections?.length || 0) + (t.betBuilders?.length || 0);
-        evts.push({
-          ticketId: t.id!,
-          leagueName: t.type || 'Múltiple',
-          leagueIcon: '🔥', // Fire icon for parlays
-          eventStr: `${t.type || 'Múltiple'} (${numEvents} eventos)`,
-          result: t.result || 'PENDIENTE',
-          odds: t.totalOdds,
-          dateStr: ticketDateStr, // Placed on the date the ticket was made
-          isBetBuilder: false,
-          stake: t.stake,
-          profit: t.profit
+      if (t.selections && t.selections.length > 0) {
+        t.selections.forEach(sel => {
+           evts.push({
+             ticketId: t.id!,
+             leagueName: sel.tip?.league || 'N/A',
+             leagueIcon: this.getIconForSport(sel.tip?.sport),
+             eventStr: this.formatEventStr(sel.tip?.event || ''),
+             result: sel.result || t.result || 'PENDIENTE',
+             odds: sel.tip?.odds || t.totalOdds,
+             dateStr: this.normalizeDate(sel.tip?.date) || ticketDateStr,
+             isBetBuilder: false,
+             stake: t.stake,
+             profit: t.profit
+           });
         });
-      } else {
-        // Simple / Bet Builder Puro -> Extract normally
-        if (t.selections && t.selections.length > 0) {
-          t.selections.forEach(sel => {
+      } 
+      
+      if (t.betBuilders && t.betBuilders.length > 0) {
+        t.betBuilders.forEach(bb => {
+           if (bb.selections && bb.selections.length > 0) {
+             const firstSel = bb.selections[0];
              evts.push({
                ticketId: t.id!,
-               leagueName: sel.tip?.league || 'N/A',
-               leagueIcon: this.getIconForSport(sel.tip?.sport),
-               eventStr: this.formatEventStr(sel.tip?.event || ''),
-               result: sel.result || t.result || 'PENDIENTE',
-               odds: sel.tip?.odds || t.totalOdds,
-               dateStr: this.normalizeDate(sel.tip?.date) || ticketDateStr,
-               isBetBuilder: false,
+               leagueName: firstSel.tip?.league || 'N/A',
+               leagueIcon: this.getIconForSport(firstSel.tip?.sport),
+               eventStr: this.formatEventStr(firstSel.tip?.event || ''),
+               result: t.result || 'PENDIENTE',
+               odds: bb.realOdds || bb.expectedOdds || t.totalOdds,
+               dateStr: this.normalizeDate(firstSel.tip?.date) || ticketDateStr,
+               isBetBuilder: true,
                stake: t.stake,
                profit: t.profit
              });
-          });
-        } 
-        
-        if (t.betBuilders && t.betBuilders.length > 0) {
-          t.betBuilders.forEach(bb => {
-             if (bb.selections && bb.selections.length > 0) {
-               const firstSel = bb.selections[0];
-               evts.push({
-                 ticketId: t.id!,
-                 leagueName: firstSel.tip?.league || 'N/A',
-                 leagueIcon: this.getIconForSport(firstSel.tip?.sport),
-                 eventStr: this.formatEventStr(firstSel.tip?.event || ''),
-                 result: t.result || 'PENDIENTE',
-                 odds: bb.realOdds || bb.expectedOdds || t.totalOdds,
-                 dateStr: this.normalizeDate(firstSel.tip?.date) || ticketDateStr,
-                 isBetBuilder: true,
-                 stake: t.stake,
-                 profit: t.profit
-               });
-             }
-          });
-        }
+           }
+        });
       }
     });
     return evts;
@@ -276,10 +258,19 @@ export class CalendarComponent implements OnInit {
       d.setDate(d.getDate() + i);
       const dStr = d.toISOString().substring(0, 10);
       
-      const dayTickets = allTickets.filter(t => this.normalizeDate(t.date) === dStr);
+      const dayTickets = allTickets.filter(t => {
+         const tDate = this.normalizeDate(t.date);
+         if (tDate === dStr) return true;
+         if (t.selections && t.selections.some(s => this.normalizeDate(s.tip?.date) === dStr)) return true;
+         if (t.betBuilders && t.betBuilders.some(bb => bb.selections && bb.selections.some(s => this.normalizeDate(s.tip?.date) === dStr))) return true;
+         return false;
+      });
+
       let dayProfit = 0;
       let hasResolved = false;
-      dayTickets.forEach(t => {
+      // We only calculate profit if the ticket was PLACED on this day to avoid double counting profit across days
+      const placedTickets = dayTickets.filter(t => this.normalizeDate(t.date) === dStr);
+      placedTickets.forEach(t => {
          if (t.result === 'GANADA' || t.result === 'PERDIDA') {
            dayProfit += (t.profit || 0);
            hasResolved = true;
@@ -293,6 +284,7 @@ export class CalendarComponent implements OnInit {
         isToday: dStr === todayStr,
         aggregatedEvents: aggregatedEvents.filter(a => a.dateStr === dStr),
         selections: allSelections.filter(s => s.dateStr === dStr),
+        tickets: dayTickets,
         profit: dayProfit,
         hasResolvedTickets: hasResolved,
         isSelected: false
