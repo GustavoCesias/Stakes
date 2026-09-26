@@ -198,42 +198,61 @@ export class CalendarComponent implements OnInit {
     const evts: CalendarSelection[] = [];
     tickets.forEach(t => {
       const ticketDateStr = this.normalizeDate(t.date);
+      const isMulti = ['combinada', 'mixta', 'sistema'].includes(t.type?.toLowerCase() || '');
       
-      if (t.selections && t.selections.length > 0) {
-        t.selections.forEach(sel => {
-           evts.push({
-             ticketId: t.id!,
-             leagueName: sel.tip?.league || 'N/A',
-             leagueIcon: this.getIconForSport(sel.tip?.sport),
-             eventStr: this.formatEventStr(sel.tip?.event || ''),
-             result: sel.result || t.result || 'PENDIENTE',
-             odds: sel.tip?.odds || t.totalOdds,
-             dateStr: this.normalizeDate(sel.tip?.date) || ticketDateStr,
-             isBetBuilder: false,
-             stake: t.stake,
-             profit: t.profit
-           });
+      if (isMulti) {
+        // Combinada, Mixta, Sistema -> Group as a single event in the calendar
+        const numEvents = (t.selections?.length || 0) + (t.betBuilders?.length || 0);
+        evts.push({
+          ticketId: t.id!,
+          leagueName: t.type || 'Múltiple',
+          leagueIcon: '🔥', // Fire icon for parlays
+          eventStr: `${t.type || 'Múltiple'} (${numEvents} eventos)`,
+          result: t.result || 'PENDIENTE',
+          odds: t.totalOdds,
+          dateStr: ticketDateStr, // Placed on the date the ticket was made
+          isBetBuilder: false,
+          stake: t.stake,
+          profit: t.profit
         });
-      } 
-      
-      if (t.betBuilders && t.betBuilders.length > 0) {
-        t.betBuilders.forEach(bb => {
-           if (bb.selections && bb.selections.length > 0) {
-             const firstSel = bb.selections[0];
+      } else {
+        // Simple / Bet Builder Puro -> Extract normally
+        if (t.selections && t.selections.length > 0) {
+          t.selections.forEach(sel => {
              evts.push({
                ticketId: t.id!,
-               leagueName: firstSel.tip?.league || 'N/A',
-               leagueIcon: this.getIconForSport(firstSel.tip?.sport),
-               eventStr: this.formatEventStr(firstSel.tip?.event || ''),
-               result: t.result || 'PENDIENTE',
-               odds: bb.realOdds || bb.expectedOdds || t.totalOdds,
-               dateStr: this.normalizeDate(firstSel.tip?.date) || ticketDateStr,
-               isBetBuilder: true,
-               stake: t.stake, // Might not be accurate if betbuilder stake is split, but good enough for now
+               leagueName: sel.tip?.league || 'N/A',
+               leagueIcon: this.getIconForSport(sel.tip?.sport),
+               eventStr: this.formatEventStr(sel.tip?.event || ''),
+               result: sel.result || t.result || 'PENDIENTE',
+               odds: sel.tip?.odds || t.totalOdds,
+               dateStr: this.normalizeDate(sel.tip?.date) || ticketDateStr,
+               isBetBuilder: false,
+               stake: t.stake,
                profit: t.profit
              });
-           }
-        });
+          });
+        } 
+        
+        if (t.betBuilders && t.betBuilders.length > 0) {
+          t.betBuilders.forEach(bb => {
+             if (bb.selections && bb.selections.length > 0) {
+               const firstSel = bb.selections[0];
+               evts.push({
+                 ticketId: t.id!,
+                 leagueName: firstSel.tip?.league || 'N/A',
+                 leagueIcon: this.getIconForSport(firstSel.tip?.sport),
+                 eventStr: this.formatEventStr(firstSel.tip?.event || ''),
+                 result: t.result || 'PENDIENTE',
+                 odds: bb.realOdds || bb.expectedOdds || t.totalOdds,
+                 dateStr: this.normalizeDate(firstSel.tip?.date) || ticketDateStr,
+                 isBetBuilder: true,
+                 stake: t.stake,
+                 profit: t.profit
+               });
+             }
+          });
+        }
       }
     });
     return evts;
