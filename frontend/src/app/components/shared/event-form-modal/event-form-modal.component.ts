@@ -52,8 +52,13 @@ export class EventFormModalComponent implements OnInit {
     if (!this.newEvent.eventDate) return alert('La fecha es obligatoria.');
     if (!this.leagueName) return alert('La liga es obligatoria.');
 
-    const league = this.leagues.find(l => l.name === this.leagueName);
-    if (!league) return alert('Liga inválida.');
+    let league = this.leagues.find(l => l.name.toLowerCase() === this.leagueName.trim().toLowerCase());
+    if (!league) {
+      league = { 
+        name: this.leagueName.trim(),
+        sport: { name: this.sportName.trim() } as Sport
+      } as League;
+    }
 
     this.newEvent.league = league;
 

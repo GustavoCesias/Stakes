@@ -2,9 +2,13 @@ package com.stakes.api.controllers;
 
 import com.stakes.api.models.SportEvent;
 import com.stakes.api.models.Tip;
+import com.stakes.api.models.League;
+import com.stakes.api.models.Sport;
 import com.stakes.api.dto.CalendarEventDto;
 import com.stakes.api.repositories.SportEventRepository;
 import com.stakes.api.repositories.TipRepository;
+import com.stakes.api.repositories.LeagueRepository;
+import com.stakes.api.repositories.SportRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
@@ -27,6 +31,12 @@ public class CalendarController {
 
     @Autowired
     private TipRepository tipRepository;
+
+    @Autowired
+    private LeagueRepository leagueRepository;
+
+    @Autowired
+    private SportRepository sportRepository;
 
     @GetMapping("/events")
     public List<CalendarEventDto> getEvents(
@@ -189,6 +199,24 @@ public class CalendarController {
 
     @PostMapping("/events")
     public SportEvent createEvent(@RequestBody SportEvent event) {
+        if (event.getLeague() != null) {
+            String leagueName = event.getLeague().getName();
+            League league = leagueRepository.findByName(leagueName).orElseGet(() -> {
+                League newLeague = new League();
+                newLeague.setName(leagueName);
+                if (event.getLeague().getSport() != null) {
+                    String sportName = event.getLeague().getSport().getName();
+                    Sport sport = sportRepository.findByName(sportName).orElseGet(() -> {
+                        Sport newSport = new Sport();
+                        newSport.setName(sportName);
+                        return sportRepository.save(newSport);
+                    });
+                    newLeague.setSport(sport);
+                }
+                return leagueRepository.save(newLeague);
+            });
+            event.setLeague(league);
+        }
         return sportEventRepository.save(event);
     }
 
