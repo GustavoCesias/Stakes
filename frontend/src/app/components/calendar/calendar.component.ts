@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TicketService, Ticket } from '../../services/ticket.service';
 import { TicketDetailModalComponent } from '../shared/ticket-detail-modal/ticket-detail-modal.component';
+import { TicketFormModalComponent } from '../shared/ticket-form-modal/ticket-form-modal.component';
 
 export interface CalendarSelection {
   ticketId: number;
@@ -45,7 +46,7 @@ export interface CalendarDay {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, TicketDetailModalComponent],
+  imports: [CommonModule, FormsModule, TicketDetailModalComponent, TicketFormModalComponent],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.css'
 })
@@ -60,6 +61,7 @@ export class CalendarComponent implements OnInit {
   sidebarState: 'summary' | 'dayDetail' = 'summary';
   selectedDay: CalendarDay | null = null;
   selectedTicketForView: Ticket | null = null;
+  showTicketForm = false;
 
   // Sidebar Summary
   monthTickets: Ticket[] = [];
@@ -86,6 +88,10 @@ export class CalendarComponent implements OnInit {
 
   ngOnInit() {
     this.currentDate.setDate(1); 
+    this.loadTickets();
+  }
+
+  loadTickets() {
     this.ticketService.getTickets().subscribe(tickets => {
       this.rawTickets = tickets.filter(t => !t.originalTipster);
       this.processData(this.rawTickets);
@@ -378,7 +384,12 @@ export class CalendarComponent implements OnInit {
   }
 
   addMatch() {
-    this.router.navigate(['/tickets/mine']);
+    this.showTicketForm = true;
+  }
+
+  onTicketSaved(ticket: Ticket) {
+    this.showTicketForm = false;
+    this.loadTickets(); // Refresh calendar to show the newly added ticket
   }
   
   getIconForSport(sport: string | undefined): string {

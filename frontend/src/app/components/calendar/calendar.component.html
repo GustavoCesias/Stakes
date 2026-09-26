@@ -377,3 +377,11 @@
     (close)="closeTicketView()">
   </app-ticket-detail-modal>
 }
+
+<!-- Ticket Form Modal -->
+@if (showTicketForm) {
+  <app-ticket-form-modal
+    (close)="showTicketForm = false"
+    (saved)="onTicketSaved($event)">
+  </app-ticket-form-modal>
+}
