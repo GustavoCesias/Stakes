@@ -249,7 +249,7 @@ export class CalendarComponent implements OnInit {
     });
     const aggregatedEvents = Array.from(eventMap.values());
     
-    const todayStr = new Date().toISOString().substring(0, 10);
+    const todayStr = this.getLocalIsoDate(new Date());
     this.upcomingEvents = allSelections
       .filter(s => s.result === 'PENDIENTE' && s.dateStr >= todayStr)
       .sort((a, b) => a.dateStr.localeCompare(b.dateStr))
@@ -268,6 +268,13 @@ export class CalendarComponent implements OnInit {
       return rawDate.substring(0, 10);
     }
     return '';
+  }
+
+  getLocalIsoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
   
   getTicketSummaryEvents(t: Ticket): string[] {
@@ -361,12 +368,12 @@ export class CalendarComponent implements OnInit {
     
     const startDate = new Date(firstDayOfMonth);
     startDate.setDate(startDate.getDate() - startDayOfWeek);
-    const todayStr = new Date().toISOString().substring(0, 10);
+    const todayStr = this.getLocalIsoDate(new Date());
     
     for (let i = 0; i < 42; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
-      const dStr = d.toISOString().substring(0, 10);
+      const dStr = this.getLocalIsoDate(d);
       
       const dayTickets = allTickets.filter(t => {
          const tDate = this.normalizeDate(t.date);
