@@ -67,7 +67,7 @@ public class AuthController {
 
         User user = userOpt.get();
 
-        if (!user.isApproved()) {
+        if (user.getApproved() == null || !user.getApproved()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Tu cuenta está pendiente de aprobación por un administrador."));
         }

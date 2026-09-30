@@ -36,7 +36,7 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Default admin user created: gustavo / gustavo232002");
         } else {
             admin = adminOpt.get();
-            if (!admin.isApproved() || !"ROLE_ADMIN".equals(admin.getRole())) {
+            if (admin.getApproved() == null || !admin.getApproved() || !"ROLE_ADMIN".equals(admin.getRole())) {
                 admin.setApproved(true);
                 admin.setRole("ROLE_ADMIN");
                 admin = userRepository.save(admin);

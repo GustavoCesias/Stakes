@@ -32,6 +32,6 @@ public class User {
     @Column
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column
-    private boolean approved = false;
+    @Column(columnDefinition = "boolean default false")
+    private Boolean approved = false;
 }

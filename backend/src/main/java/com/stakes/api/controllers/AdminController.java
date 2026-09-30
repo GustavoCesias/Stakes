@@ -23,7 +23,7 @@ public class AdminController {
     @GetMapping("/users/pending")
     public ResponseEntity<?> getPendingUsers() {
         List<User> pendingUsers = userRepository.findAll().stream()
-                .filter(u -> !u.isApproved())
+                .filter(u -> u.getApproved() == null || !u.getApproved())
                 .collect(Collectors.toList());
         return ResponseEntity.ok(pendingUsers);
     }
