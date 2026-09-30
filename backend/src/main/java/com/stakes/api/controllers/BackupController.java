@@ -91,14 +91,17 @@ public class BackupController {
         Long userId = userService.getCurrentUser().getId();
         ExportData backup = new ExportData();
         backup.setExportedAt(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-        backup.setBankrolls(bankrollRepository.findByUserId(userId));
-        backup.setBankrollTransactions(bankrollTransactionRepository.findByUserIdOrderByDateDescIdDesc(userId));
+        
+        Optional<Bankroll> bankroll = bankrollRepository.findByUserId(userId);
+        backup.setBankrolls(bankroll.map(List::of).orElseGet(ArrayList::new));
+        
+        backup.setBankrollTransactions(bankrollTransactionRepository.findAllByUserIdOrderByDateDescIdDesc(userId));
         backup.setChannels(channelRepository.findByUserId(userId));
         backup.setChannelSubgroups(channelSubgroupRepository.findByUserId(userId));
-        backup.setTips(tipRepository.findByUserIdOrderByDateDescIdDesc(userId));
+        backup.setTips(tipRepository.findAllByUserIdOrderByDateDescIdDesc(userId));
 
         List<BackupTicketDto> ticketDtos = new ArrayList<>();
-        for (Ticket t : ticketRepository.findByUserIdOrderByDateDescIdDesc(userId)) {
+        for (Ticket t : ticketRepository.findAllByUserIdOrderByDateDescIdDesc(userId)) {
             BackupTicketDto dto = new BackupTicketDto();
             dto.setDate(t.getDate());
             dto.setType(t.getType());
