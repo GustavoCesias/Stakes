@@ -23,6 +23,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired
+    private com.stakes.api.repositories.UserRepository userRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -33,7 +36,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromJWT(jwt);
 
-                UserDetails userDetails = new User(username, "", Collections.emptyList());
+                com.stakes.api.models.User dbUser = userRepository.findByUsername(username).orElse(null);
+                java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.Collections.emptyList();
+                
+                if (dbUser != null && dbUser.getRole() != null) {
+                    authorities = java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority(dbUser.getRole()));
+                }
+
+                UserDetails userDetails = new User(username, "", authorities);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
