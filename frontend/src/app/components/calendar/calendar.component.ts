@@ -505,6 +505,15 @@ export class CalendarComponent implements OnInit {
     }
   }
 
+  getTextColor(result: string): string {
+    switch (result.toUpperCase()) {
+      case 'GANADA': return 'text-emerald-400';
+      case 'PERDIDA': return 'text-red-400';
+      case 'NULA': return 'text-gray-400';
+      default: return 'text-blue-400';
+    }
+  }
+
   getResultColor(result: string): string {
     switch (result.toUpperCase()) {
       case 'GANADA': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';

@@ -301,7 +301,7 @@
                         </div>
                         <div class="text-gray-400 flex flex-col">
                            <span>{{tip.market}}</span>
-                           <span class="text-emerald-400/90 font-medium">{{tip.pick}}</span>
+                           <span class="font-medium" [ngClass]="getTextColor(tip.result)">{{tip.pick}}</span>
                         </div>
                         <div class="text-gray-500 font-mono text-[10px]">&#64;{{tip.odds || 'N/A'}}</div>
                      </div>
