@@ -299,7 +299,10 @@
                            <span class="text-gray-300 font-semibold truncate">{{tip.event}}</span>
                            <div class="w-1.5 h-1.5 rounded-full shrink-0 mt-1" [ngClass]="getDotColor(tip.result)"></div>
                         </div>
-                        <div class="text-gray-400 flex flex-col">
+                        <div *ngIf="tip.subgroup" class="w-max px-2 py-0.5 mt-1 bg-purple-500/10 text-purple-300 rounded text-[9px] font-bold border border-purple-500/20 uppercase tracking-wider">
+                           {{ tip.subgroup.name }}
+                        </div>
+                        <div class="text-gray-400 flex flex-col mt-1">
                            <span>{{tip.market}}</span>
                            <span class="font-medium" [ngClass]="getTextColor(tip.result)">{{tip.pick}}</span>
                         </div>
