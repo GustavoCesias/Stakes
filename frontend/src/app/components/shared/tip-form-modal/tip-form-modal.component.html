@@ -1,0 +1,205 @@
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in" (click)="close.emit()">
+  <div class="glass rounded-2xl shadow-2xl border border-blue-500/20 w-[95%] max-w-3xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]" (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 w-full flex-shrink-0"></div>
+    <div class="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02] flex-shrink-0">
+      <h3 class="text-base font-bold text-white flex items-center">
+        <span class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center mr-3 text-sm">📝</span>
+        {{ isEditing ? (editingBetBuilderTips ? 'Editar Bet Builder (Múltiples Picks)' : 'Editar Recomendación') : 'Registrar Nueva Recomendación' }}
+      </h3>
+      <button (click)="close.emit()" class="text-gray-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-lg p-1.5">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-6 overflow-y-auto custom-scrollbar relative">
+      <!-- Overlay para crear canal -->
+      @if (showChannelForm) {
+      <div class="absolute inset-0 bg-[#0b1018]/90 backdrop-blur-sm z-10 flex flex-col justify-center items-center p-6 animate-fade-in">
+        <div class="glass border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-scale-in">
+          <h4 class="text-lg font-bold text-white mb-4">Nuevo Canal / Tipster</h4>
+          <form (ngSubmit)="saveChannel()" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Nombre</label>
+              <input type="text" [(ngModel)]="newChannel.name" name="channelName" required placeholder="Ej. DonJulio VIP"
+                class="w-full bg-[#121822] border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Tipo</label>
+              <select [(ngModel)]="newChannel.type" name="channelType" required
+                class="w-full bg-[#121822] border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+                <option>FREE</option><option>VIP</option><option>RECOMENDACION</option><option>PROPIO</option>
+              </select>
+            </div>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-white/5 mt-2">
+              <button type="button" (click)="toggleChannelForm()" class="bg-white/5 hover:bg-white/10 text-gray-300 font-semibold py-2.5 px-6 rounded-xl text-sm transition-all">Cancelar</button>
+              <button type="submit" class="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold py-2.5 px-8 rounded-xl shadow-lg shadow-purple-500/20 text-sm transition-all">Guardar Canal</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      }
+
+      @if (editingBetBuilderTips) {
+        <div class="mb-5 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs flex items-start space-x-2">
+          <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <p>Estás editando un <strong>Bet Builder</strong> (grupo de picks). Los cambios que realices aquí se aplicarán a todos los <strong>{{ editingBetBuilderTips.length }} picks</strong> asociados.</p>
+        </div>
+      }
+
+      <form (ngSubmit)="saveTip()" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        
+        <!-- Bet Builder Toggle -->
+        @if (!isEditing) {
+          <div class="md:col-span-3 flex items-center bg-[#121822] p-3 rounded-xl border border-white/5 space-x-3">
+            <input type="checkbox" id="bbToggle" [(ngModel)]="isNewBetBuilder" name="isNewBetBuilder" class="w-4 h-4 text-blue-500 rounded border-white/10 bg-slate-900 focus:ring-blue-500 focus:ring-offset-slate-900">
+            <label for="bbToggle" class="text-sm font-semibold text-gray-300 cursor-pointer select-none">
+              Registrar como Bet Builder (Múltiples picks)
+            </label>
+          </div>
+        }
+
+        <!-- Canal -->
+        <div class="md:col-span-3">
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Canal / Origen</label>
+          <div class="flex space-x-2">
+            <select [(ngModel)]="editingTip.channel" (ngModelChange)="onChannelSelected()" [compareWith]="compareChannels" name="channel"
+              class="flex-1 bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all appearance-none cursor-pointer">
+              <option [ngValue]="null">📡 Personal / Sin Canal</option>
+              @for (ch of channels; track ch.id) {
+                <option [ngValue]="ch">{{ ch.name }} ({{ ch.type }})</option>
+              }
+            </select>
+            <button type="button" (click)="toggleChannelForm()"
+              class="bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 font-semibold py-2.5 px-4 rounded-xl text-sm transition-all flex-shrink-0">
+              + Nuevo
+            </button>
+          </div>
+        </div>
+
+        <!-- Subgrupo (solo si hay canal seleccionado) -->
+        @if (editingTip.channel) {
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Subcanal / Etiqueta</label>
+          <select [(ngModel)]="editingTip.subgroup" [compareWith]="compareSubgroups" name="subgroup"
+            class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all appearance-none cursor-pointer">
+            <option [ngValue]="null">-- General --</option>
+            @for (sg of formSubgroups; track sg.id) {
+              <option [ngValue]="sg">{{ sg.name }}</option>
+            }
+          </select>
+        </div>
+        }
+
+        <!-- Date -->
+        <div [class]="editingTip.channel ? 'md:col-span-2' : 'md:col-span-3'">
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Fecha</label>
+          <input type="date" [(ngModel)]="editingTip.date" name="date" required
+            class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Evento (Partido)</label>
+          <input type="text" [(ngModel)]="editingTip.event" (change)="onEventChange()" name="event" required placeholder="Ej. Real Madrid vs Barcelona" list="eventOptionsModal"
+            class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+          <datalist id="eventOptionsModal">
+            <option *ngFor="let ev of calendarEvents" [value]="ev.homeTeam + ' vs ' + ev.awayTeam"></option>
+          </datalist>
+        </div>
+
+        <!-- Deporte y Liga -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Deporte (Opcional)</label>
+          <input type="text" [(ngModel)]="editingTip.sport" (change)="onSportChange()" name="sport" placeholder="Ej. Fútbol" list="sportOptionsModal"
+            class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+          <datalist id="sportOptionsModal">
+            <option *ngFor="let s of sports" [value]="s.name"></option>
+          </datalist>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Liga / Competición (Opcional)</label>
+          <input type="text" [(ngModel)]="editingTip.league" name="league" placeholder="Ej. La Liga" list="leagueOptionsModal"
+            class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+          <datalist id="leagueOptionsModal">
+            <option *ngFor="let l of filteredLeagues" [value]="l.name"></option>
+          </datalist>
+        </div>
+
+        @if (!editingBetBuilderTips && !isNewBetBuilder) {
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Mercado</label>
+            <input type="text" [(ngModel)]="editingTip.market" name="market" required placeholder="Ej. Goles Totales" list="marketOptionsModal"
+              class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm font-semibold outline-none transition-all">
+            <datalist id="marketOptionsModal">
+              <option *ngFor="let m of markets" [value]="m.name"></option>
+            </datalist>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Pronóstico (Pick)</label>
+            <input type="text" [(ngModel)]="editingTip.pick" name="pick" required placeholder="Ej. Más de 2.5" [attr.list]="'pickOptionsModal'"
+              class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm font-semibold outline-none transition-all">
+            <datalist id="pickOptionsModal">
+              <option *ngFor="let opt of getMarketOptions(editingTip.market)" [value]="opt"></option>
+            </datalist>
+          </div>
+        }
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+            {{ isNewBetBuilder || editingBetBuilderTips ? 'Cuota Total' : 'Cuota' }}
+          </label>
+          <div class="relative">
+            <span class="absolute left-4 top-2.5 text-blue-400 font-bold text-sm">&#64;</span>
+            <input type="number" [(ngModel)]="editingTip.odds" name="odds" step="0.01" placeholder="1.85"
+              class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white pl-8 pr-4 py-2.5 text-sm font-mono outline-none transition-all">
+          </div>
+        </div>
+
+        @if (isNewBetBuilder || editingBetBuilderTips) {
+          <div class="md:col-span-3 space-y-3 bg-white/[0.02] p-4 rounded-xl border border-white/5">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Picks del Bet Builder</span>
+              @if (isNewBetBuilder) {
+                <button type="button" (click)="addBBPick()" class="text-xs font-semibold bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 py-1 px-3 rounded-lg border border-blue-500/30 transition-all flex items-center">
+                  <span class="mr-1">+</span> Añadir Pick
+                </button>
+              }
+            </div>
+            
+            @for (bbPick of (isNewBetBuilder ? newBBPicks : editingBetBuilderTips); track $index) {
+              <div class="flex items-center space-x-3 bg-[#121822] p-2 rounded-lg border border-white/5">
+                <div class="flex-1">
+                  <input type="text" [(ngModel)]="bbPick.market" name="bbMarket_{{$index}}" required placeholder="Mercado" list="marketOptionsModal"
+                    class="w-full bg-transparent text-white px-2 py-1.5 text-sm outline-none border-b border-transparent focus:border-blue-500/50">
+                </div>
+                <div class="w-px h-6 bg-white/10"></div>
+                <div class="flex-1">
+                  <input type="text" [(ngModel)]="bbPick.pick" name="bbPick_{{$index}}" required placeholder="Pronóstico (Pick)" [attr.list]="'bbPickOptionsModal_' + $index"
+                    class="w-full bg-transparent text-white px-2 py-1.5 text-sm outline-none border-b border-transparent focus:border-blue-500/50 font-semibold">
+                  <datalist [id]="'bbPickOptionsModal_' + $index">
+                    <option *ngFor="let opt of getMarketOptions(bbPick.market)" [value]="opt"></option>
+                  </datalist>
+                </div>
+                <button type="button" (click)="removeBBPick($index)" class="text-gray-500 hover:text-red-400 p-1.5 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="md:col-span-3 pt-6 mt-2 border-t border-white/5 flex justify-end gap-3 flex-shrink-0">
+          <button type="button" (click)="close.emit()" class="px-6 py-2.5 rounded-xl font-bold text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" class="px-8 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/25 transition-all">
+            {{ isEditing ? 'Guardar Cambios' : 'Registrar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

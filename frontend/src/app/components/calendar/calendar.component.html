@@ -442,3 +442,11 @@
     (saved)="onEventSaved($event)">
   </app-event-form-modal>
 }
+
+<!-- Tip Form Modal -->
+@if (showTipForm) {
+  <app-tip-form-modal
+    (close)="showTipForm = false"
+    (saved)="onTipSaved()">
+  </app-tip-form-modal>
+}

@@ -9,6 +9,7 @@ import { CalendarService, SportEvent } from '../../services/calendar.service';
 import { TicketDetailModalComponent } from '../shared/ticket-detail-modal/ticket-detail-modal.component';
 import { TicketFormModalComponent } from '../shared/ticket-form-modal/ticket-form-modal.component';
 import { EventFormModalComponent } from '../shared/event-form-modal/event-form-modal.component';
+import { TipFormModalComponent } from '../shared/tip-form-modal/tip-form-modal.component';
 
 export interface CalendarSelection {
   ticketId: number;
@@ -56,7 +57,7 @@ export interface CalendarDay {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, TicketDetailModalComponent, TicketFormModalComponent, EventFormModalComponent],
+  imports: [CommonModule, FormsModule, TicketDetailModalComponent, TicketFormModalComponent, EventFormModalComponent, TipFormModalComponent],
   templateUrl: './calendar.component.html',
   styleUrl: './calendar.component.css'
 })
@@ -76,6 +77,7 @@ export class CalendarComponent implements OnInit {
   selectedTicketForView: Ticket | null = null;
   showTicketForm = false;
   showEventForm = false;
+  showTipForm = false;
 
   // Sidebar Summary
   monthTickets: Ticket[] = [];
@@ -452,10 +454,16 @@ export class CalendarComponent implements OnInit {
     if (this.viewMode === 'events') {
       this.showEventForm = true;
     } else if (this.viewMode === 'picks') {
-      this.router.navigate(['/pool']);
+      this.showTipForm = true;
     } else {
       this.showTicketForm = true;
     }
+  }
+
+  onTipSaved() {
+    this.showTipForm = false;
+    this.tipService.invalidateCache();
+    this.loadTickets(); 
   }
 
   onTicketSaved(ticket: Ticket) {
