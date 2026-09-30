@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, combineLatest } from 'rxjs';
 import { TicketService, Ticket } from '../../services/ticket.service';
 import { TipService, Tip } from '../../services/tip.service';
 import { CalendarService, SportEvent } from '../../services/calendar.service';
@@ -107,7 +107,7 @@ export class CalendarComponent implements OnInit {
   }
 
   loadTickets() {
-    forkJoin({
+    combineLatest({
       tickets: this.ticketService.getTickets(),
       tips: this.tipService.getTips()
     }).subscribe(({ tickets, tips }) => {
