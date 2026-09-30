@@ -107,11 +107,12 @@ export class CalendarComponent implements OnInit {
   }
 
   loadTickets() {
-    combineLatest({
-      tickets: this.ticketService.getTickets(),
-      tips: this.tipService.getTips()
-    }).subscribe(({ tickets, tips }) => {
+    this.ticketService.getTickets().subscribe(tickets => {
       this.rawTickets = tickets.filter(t => !t.originalTipster);
+      this.loadEventsAndProcess();
+    });
+
+    this.tipService.getTips().subscribe(tips => {
       this.rawTips = tips;
       this.loadEventsAndProcess();
     });
