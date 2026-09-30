@@ -13,6 +13,7 @@ import java.util.List;
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findAllByOrderByDateDescIdDesc();
+    List<Ticket> findAllByUserIdOrderByDateDescIdDesc(Long userId);
 
     @Modifying
     @Query("UPDATE Ticket t SET t.subgroup = null WHERE t.subgroup.id = :subgroupId")

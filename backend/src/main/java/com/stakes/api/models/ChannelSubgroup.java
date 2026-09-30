@@ -23,4 +23,9 @@ public class ChannelSubgroup {
     @ManyToOne
     @JoinColumn(name = "channel_id", nullable = false)
     private Channel channel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private User user;
 }

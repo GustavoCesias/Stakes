@@ -6,6 +6,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SportEventRepository extends JpaRepository<SportEvent, Long> {
-    List<SportEvent> findByEventDateBetweenOrderByEventDateAsc(LocalDateTime start, LocalDateTime end);
-    List<SportEvent> findByLeagueIdAndEventDateBetweenOrderByEventDateAsc(Long leagueId, LocalDateTime start, LocalDateTime end);
+    List<SportEvent> findByUserIdAndEventDateBetweenOrderByEventDateAsc(Long userId, LocalDateTime start, LocalDateTime end);
+    List<SportEvent> findByUserIdAndLeagueIdAndEventDateBetweenOrderByEventDateAsc(Long userId, Long leagueId, LocalDateTime start, LocalDateTime end);
 }

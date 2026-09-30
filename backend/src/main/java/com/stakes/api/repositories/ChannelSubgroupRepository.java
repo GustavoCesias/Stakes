@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ChannelSubgroupRepository extends JpaRepository<ChannelSubgroup, Long> {
     List<ChannelSubgroup> findByChannelId(Long channelId);
+    List<ChannelSubgroup> findByUserId(Long userId);
 }

@@ -13,6 +13,7 @@ import java.util.List;
 public interface TipRepository extends JpaRepository<Tip, Long> {
 
     List<Tip> findAllByOrderByDateDescIdDesc();
+    List<Tip> findAllByUserIdOrderByDateDescIdDesc(Long userId);
 
     List<Tip> findByChannelId(Long channelId);
 

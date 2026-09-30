@@ -29,4 +29,9 @@ public class SportEvent {
     @ManyToOne
     @JoinColumn(name = "league_id", nullable = false)
     private League league;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private User user;
 }
