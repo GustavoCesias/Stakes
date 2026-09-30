@@ -2,7 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { TicketService, Ticket } from '../../services/ticket.service';
+import { TipService, Tip } from '../../services/tip.service';
 import { CalendarService, SportEvent } from '../../services/calendar.service';
 import { TicketDetailModalComponent } from '../shared/ticket-detail-modal/ticket-detail-modal.component';
 import { TicketFormModalComponent } from '../shared/ticket-form-modal/ticket-form-modal.component';
@@ -19,6 +21,11 @@ export interface CalendarSelection {
   isBetBuilder: boolean;
   stake?: number;
   profit?: number;
+}
+
+export interface CalendarTipAggregate {
+  tipsterName: string;
+  tips: Tip[];
 }
 
 export interface CalendarEventAggregate {
@@ -42,6 +49,7 @@ export interface CalendarDay {
   tickets: Ticket[]; // The actual tickets affecting this day
   profit: number;
   hasResolvedTickets: boolean;
+  aggregatedTips: CalendarTipAggregate[];
   isSelected?: boolean;
 }
 
@@ -54,6 +62,7 @@ export interface CalendarDay {
 })
 export class CalendarComponent implements OnInit {
   ticketService = inject(TicketService);
+  tipService = inject(TipService);
   calendarService = inject(CalendarService);
   router = inject(Router);
   
@@ -61,7 +70,7 @@ export class CalendarComponent implements OnInit {
   days: CalendarDay[] = [];
   calendarEvents: SportEvent[] = [];
   
-  viewMode: 'events' | 'tickets' | 'profits' = 'events'; 
+  viewMode: 'events' | 'tickets' | 'profits' | 'picks' = 'events'; 
   sidebarState: 'summary' | 'dayDetail' = 'summary';
   selectedDay: CalendarDay | null = null;
   selectedTicketForView: Ticket | null = null;
@@ -71,6 +80,7 @@ export class CalendarComponent implements OnInit {
   // Sidebar Summary
   monthTickets: Ticket[] = [];
   rawTickets: Ticket[] = []; // Store raw tickets to re-apply filters without fetching
+  rawTips: Tip[] = [];
   summary = {
     total: 0,
     won: 0,
@@ -97,8 +107,12 @@ export class CalendarComponent implements OnInit {
   }
 
   loadTickets() {
-    this.ticketService.getTickets().subscribe(tickets => {
+    forkJoin({
+      tickets: this.ticketService.getTickets(),
+      tips: this.tipService.getTips()
+    }).subscribe(({ tickets, tips }) => {
       this.rawTickets = tickets.filter(t => !t.originalTipster);
+      this.rawTips = tips;
       this.loadEventsAndProcess();
     });
   }
@@ -128,7 +142,7 @@ export class CalendarComponent implements OnInit {
     this.loadEventsAndProcess();
   }
   
-  setViewMode(mode: 'events' | 'tickets' | 'profits') {
+  setViewMode(mode: 'events' | 'tickets' | 'profits' | 'picks') {
     this.viewMode = mode;
   }
 
@@ -372,7 +386,17 @@ export class CalendarComponent implements OnInit {
            hasResolved = true;
          }
       });
-      
+      const dayTips = this.rawTips.filter(t => this.normalizeDate(t.date) === dStr);
+      const tipsMap = new Map<string, CalendarTipAggregate>();
+      dayTips.forEach(tip => {
+        const tipsterName = tip.channel ? tip.channel.name : 'Personal';
+        if (!tipsMap.has(tipsterName)) {
+           tipsMap.set(tipsterName, { tipsterName, tips: [] });
+        }
+        tipsMap.get(tipsterName)!.tips.push(tip);
+      });
+      const aggregatedTips = Array.from(tipsMap.values());
+
       this.days.push({
         date: d,
         dateStr: dStr,
@@ -383,6 +407,7 @@ export class CalendarComponent implements OnInit {
         tickets: dayTickets,
         profit: dayProfit,
         hasResolvedTickets: hasResolved,
+        aggregatedTips: aggregatedTips,
         isSelected: false
       });
     }
@@ -418,6 +443,8 @@ export class CalendarComponent implements OnInit {
   addMatch() {
     if (this.viewMode === 'events') {
       this.showEventForm = true;
+    } else if (this.viewMode === 'picks') {
+      this.router.navigate(['/pool']);
     } else {
       this.showTicketForm = true;
     }

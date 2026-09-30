@@ -42,6 +42,11 @@
               [ngClass]="viewMode === 'tickets' ? 'bg-emerald-500 text-white' : 'text-gray-400 hover:text-white'">
         Tickets
       </button>
+      <button (click)="setViewMode('picks')" 
+              class="px-4 py-1.5 rounded-md transition-colors shadow-lg"
+              [ngClass]="viewMode === 'picks' ? 'bg-emerald-500 text-white' : 'text-gray-400 hover:text-white'">
+        Picks
+      </button>
       <button (click)="setViewMode('profits')" 
               class="px-4 py-1.5 rounded-md transition-colors shadow-lg"
               [ngClass]="viewMode === 'profits' ? 'bg-emerald-500 text-white' : 'text-gray-400 hover:text-white'">
@@ -57,7 +62,7 @@
       </button>
       <button (click)="addMatch()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-emerald-500/20">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        {{ viewMode === 'events' ? 'Añadir Partido' : 'Añadir Ticket' }}
+        {{ viewMode === 'events' ? 'Añadir Partido' : (viewMode === 'picks' ? 'Añadir Pick' : 'Añadir Ticket') }}
       </button>
     </div>
   </div>
@@ -127,6 +132,21 @@
               <div *ngIf="day.tickets.length > 2" 
                    class="text-[10px] text-emerald-500 font-medium px-1 mt-1">
                 +{{day.tickets.length - 2}} más
+              </div>
+            </div>
+
+            <!-- Picks Chips View (Picks Mode) -->
+            <div *ngIf="viewMode === 'picks'" class="flex flex-col gap-1 flex-1 overflow-hidden pointer-events-none mt-1">
+              <div *ngFor="let agg of day.aggregatedTips | slice:0:2" 
+                   class="flex items-center gap-1.5 px-1 py-0.5 rounded bg-gray-800/50">
+                <span class="text-[10px] text-gray-300 truncate font-medium">
+                  {{ agg.tipsterName }} ({{agg.tips.length}})
+                </span>
+              </div>
+              
+              <div *ngIf="day.aggregatedTips.length > 2" 
+                   class="text-[10px] text-emerald-500 font-medium px-1 mt-1">
+                +{{day.aggregatedTips.length - 2}} más
               </div>
             </div>
 
@@ -261,6 +281,35 @@
             </div>
           </ng-container>
 
+          <!-- PICKS View -->
+          <ng-container *ngIf="viewMode === 'picks'">
+            <div *ngIf="selectedDay.aggregatedTips.length === 0" class="text-xs text-gray-500 italic p-4 text-center bg-gray-800/30 rounded-xl border border-gray-800">
+              No hay picks para este día.
+            </div>
+            <div *ngFor="let agg of selectedDay.aggregatedTips" class="bg-gray-800/50 p-3 rounded-xl border border-gray-700/50 flex flex-col gap-2">
+               <div class="text-sm font-bold text-gray-200 truncate">{{agg.tipsterName}}</div>
+               <details class="group mt-1">
+                  <summary class="text-xs text-gray-500 cursor-pointer hover:text-emerald-400 transition-colors list-none flex items-center gap-1 select-none">
+                     <svg class="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                     {{agg.tips.length}} {{agg.tips.length === 1 ? 'pick' : 'picks'}}
+                  </summary>
+                  <div class="mt-2 pl-4 border-l-2 border-gray-700 flex flex-col gap-2">
+                     <div *ngFor="let tip of agg.tips" class="flex flex-col gap-1 text-xs bg-gray-900/50 p-2 rounded-lg border border-gray-800">
+                        <div class="flex justify-between items-start gap-2">
+                           <span class="text-gray-300 font-semibold truncate">{{tip.event}}</span>
+                           <div class="w-1.5 h-1.5 rounded-full shrink-0 mt-1" [ngClass]="getDotColor(tip.result)"></div>
+                        </div>
+                        <div class="text-gray-400 flex flex-col">
+                           <span>{{tip.market}}</span>
+                           <span class="text-emerald-400/90 font-medium">{{tip.pick}}</span>
+                        </div>
+                        <div class="text-gray-500 font-mono text-[10px]">&#64;{{tip.odds || 'N/A'}}</div>
+                     </div>
+                  </div>
+               </details>
+            </div>
+          </ng-container>
+
           <!-- TICKETS & PROFITS View -->
           <ng-container *ngIf="viewMode === 'tickets' || viewMode === 'profits'">
             <div *ngIf="selectedDay.tickets.length === 0" class="text-xs text-gray-500 italic p-4 text-center bg-gray-800/30 rounded-xl border border-gray-800">
@@ -289,8 +338,8 @@
                   <span class="font-bold" [ngClass]="{'text-emerald-400': (t.profit || 0) > 0, 'text-red-400': (t.profit || 0) < 0, 'text-blue-400': t.result==='PENDIENTE', 'text-gray-400': t.result==='NULA'}">
                     <ng-container *ngIf="t.result === 'PENDIENTE'">Pendiente</ng-container>
                     <ng-container *ngIf="t.result === 'NULA'">Anulada</ng-container>
-                    <ng-container *ngIf="t.result === 'GANADA' || t.result === 'PERDIDA'">
-                       {{(t.profit || 0) > 0 ? '+' : ''}}{{t.profit || 0 | currency:'USD'}}
+                     <ng-container *ngIf="t.result === 'GANADA' || t.result === 'PERDIDA'">
+                       {{ (t.profit || 0) > 0 ? '+' : '' }}{{ (t.profit || 0) | currency:'USD' }}
                     </ng-container>
                   </span>
                </div>
