@@ -52,7 +52,9 @@ public class DataInitializer implements CommandLineRunner {
         jdbcTemplate.update("UPDATE tips SET user_id = ? WHERE user_id IS NULL", adminId);
         jdbcTemplate.update("UPDATE channels SET user_id = ? WHERE user_id IS NULL", adminId);
         jdbcTemplate.update("UPDATE channel_subgroups SET user_id = ? WHERE user_id IS NULL", adminId);
-        jdbcTemplate.update("UPDATE bankroll SET user_id = ? WHERE user_id IS NULL", adminId);
+        // Para Bankroll, como es OneToOne, solo podemos asignar uno al admin. Asignaremos el más reciente y borraremos el resto.
+        jdbcTemplate.update("UPDATE bankroll SET user_id = ? WHERE id = (SELECT MAX(id) FROM bankroll WHERE user_id IS NULL)", adminId);
+        jdbcTemplate.update("DELETE FROM bankroll WHERE user_id IS NULL");
         jdbcTemplate.update("UPDATE sport_events SET user_id = ? WHERE user_id IS NULL", adminId);
     }
 }
