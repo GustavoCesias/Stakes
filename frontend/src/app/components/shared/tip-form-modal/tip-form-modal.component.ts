@@ -95,8 +95,8 @@ export class TipFormModalComponent implements OnInit {
   }
 
   onChannelSelected() {
-    if (this.editingTip.channel && this.editingTip.channel.subgroups) {
-      this.formSubgroups = this.editingTip.channel.subgroups;
+    if (this.editingTip.channel && this.editingTip.channel.id) {
+      this.channelService.getSubgroups(this.editingTip.channel.id).subscribe(s => this.formSubgroups = s);
     } else {
       this.formSubgroups = [];
       this.editingTip.subgroup = null;
