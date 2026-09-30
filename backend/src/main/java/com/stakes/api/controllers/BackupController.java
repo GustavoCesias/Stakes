@@ -37,6 +37,7 @@ public class BackupController {
     @Autowired private TicketSelectionRepository ticketSelectionRepository;
     @Autowired private BetBuilderRepository betBuilderRepository;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private com.stakes.api.services.UserService userService;
 
     // ─── DTOs for export ───────────────────────────────────────────────────────
 
@@ -87,16 +88,17 @@ public class BackupController {
 
     @GetMapping("/export")
     public ResponseEntity<ExportData> exportData() {
+        Long userId = userService.getCurrentUser().getId();
         ExportData backup = new ExportData();
         backup.setExportedAt(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-        backup.setBankrolls(bankrollRepository.findAll());
-        backup.setBankrollTransactions(bankrollTransactionRepository.findAllByOrderByDateDescIdDesc());
-        backup.setChannels(channelRepository.findAll());
-        backup.setChannelSubgroups(channelSubgroupRepository.findAll());
-        backup.setTips(tipRepository.findAllByOrderByDateDescIdDesc());
+        backup.setBankrolls(bankrollRepository.findByUserId(userId));
+        backup.setBankrollTransactions(bankrollTransactionRepository.findByUserIdOrderByDateDescIdDesc(userId));
+        backup.setChannels(channelRepository.findByUserId(userId));
+        backup.setChannelSubgroups(channelSubgroupRepository.findByUserId(userId));
+        backup.setTips(tipRepository.findByUserIdOrderByDateDescIdDesc(userId));
 
         List<BackupTicketDto> ticketDtos = new ArrayList<>();
-        for (Ticket t : ticketRepository.findAllByOrderByDateDescIdDesc()) {
+        for (Ticket t : ticketRepository.findByUserIdOrderByDateDescIdDesc(userId)) {
             BackupTicketDto dto = new BackupTicketDto();
             dto.setDate(t.getDate());
             dto.setType(t.getType());
@@ -175,10 +177,14 @@ public class BackupController {
         }
 
         try {
+            User currentUser = userService.getCurrentUser();
+            Long userId = currentUser.getId();
+
             // 1. Bankrolls
             if (backup.getBankrolls() != null) {
                 for (Bankroll b : backup.getBankrolls()) {
                     b.setId(null);
+                    b.setUser(currentUser);
                     bankrollRepository.save(b);
                 }
             }
@@ -187,6 +193,7 @@ public class BackupController {
             if (backup.getBankrollTransactions() != null) {
                 for (BankrollTransaction tx : backup.getBankrollTransactions()) {
                     tx.setId(null);
+                    tx.setUser(currentUser);
                     bankrollTransactionRepository.save(tx);
                 }
             }
@@ -197,8 +204,9 @@ public class BackupController {
                 for (Channel ch : backup.getChannels()) {
                     Long oldId = ch.getId();
                     ch.setId(null);
+                    ch.setUser(currentUser);
                     Channel saved;
-                    Optional<Channel> existing = channelRepository.findByName(ch.getName());
+                    Optional<Channel> existing = channelRepository.findByNameAndUserId(ch.getName(), userId);
                     saved = existing.orElseGet(() -> channelRepository.save(ch));
                     if (oldId != null) channelMap.put(oldId, saved);
                 }
@@ -208,10 +216,11 @@ public class BackupController {
                 if (ch == null) return null;
                 if (ch.getId() != null && channelMap.containsKey(ch.getId())) return channelMap.get(ch.getId());
                 if (ch.getName() != null) {
-                    Optional<Channel> ex = channelRepository.findByName(ch.getName());
+                    Optional<Channel> ex = channelRepository.findByNameAndUserId(ch.getName(), userId);
                     if (ex.isPresent()) return ex.get();
                 }
                 ch.setId(null);
+                ch.setUser(currentUser);
                 return channelRepository.save(ch);
             };
 
@@ -221,6 +230,7 @@ public class BackupController {
                 for (ChannelSubgroup sg : backup.getChannelSubgroups()) {
                     Long oldSgId = sg.getId();
                     sg.setId(null);
+                    sg.setUser(currentUser);
                     if (sg.getChannel() != null) sg.setChannel(resolveChannel.apply(sg.getChannel()));
                     ChannelSubgroup savedSg = channelSubgroupRepository.save(sg);
                     if (oldSgId != null) subgroupMap.put(oldSgId, savedSg);
@@ -233,6 +243,7 @@ public class BackupController {
                 for (Tip tip : backup.getTips()) {
                     Long oldTipId = tip.getId();
                     tip.setId(null);
+                    tip.setUser(currentUser);
                     if (tip.getChannel() != null) tip.setChannel(resolveChannel.apply(tip.getChannel()));
                     if (tip.getSubgroup() != null) {
                         Long oldSgId = tip.getSubgroup().getId();
@@ -242,6 +253,7 @@ public class BackupController {
                             // subgroup not in map, try to save it
                             ChannelSubgroup sg = tip.getSubgroup();
                             sg.setId(null);
+                            sg.setUser(currentUser);
                             if (sg.getChannel() != null) sg.setChannel(resolveChannel.apply(sg.getChannel()));
                             tip.setSubgroup(channelSubgroupRepository.save(sg));
                         }
@@ -266,6 +278,7 @@ public class BackupController {
                     ticket.setResult(result != null ? result : "PENDIENTE");
                     ticket.setProfit(getBigDecimal(ticketNode, "profit"));
                     ticket.setOriginalTipster(getBoolean(ticketNode, "originalTipster"));
+                    ticket.setUser(currentUser);
 
                     // Resolve subgroup — supports both v1 (subgroup object) and v2 (subgroupId)
                     ChannelSubgroup resolvedSubgroup = null;
