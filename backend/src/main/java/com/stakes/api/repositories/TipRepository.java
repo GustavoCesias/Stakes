@@ -14,6 +14,7 @@ public interface TipRepository extends JpaRepository<Tip, Long> {
 
     List<Tip> findAllByOrderByDateDescIdDesc();
     List<Tip> findAllByUserIdOrderByDateDescIdDesc(Long userId);
+    List<Tip> findByUserIdAndDateBetween(Long userId, java.time.LocalDate start, java.time.LocalDate end);
 
     List<Tip> findByChannelId(Long channelId);
 

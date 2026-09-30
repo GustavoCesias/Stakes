@@ -39,6 +39,10 @@ export class LayoutComponent implements OnInit {
     return this.authService.getUserName();
   }
 
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+
   logout() {
     this.authService.logout();
   }

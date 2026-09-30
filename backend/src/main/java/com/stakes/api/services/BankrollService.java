@@ -11,7 +11,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import com.stakes.api.models.User;
 
 @Service
 public class BankrollService {
@@ -22,13 +25,20 @@ public class BankrollService {
     @Autowired
     private BankrollTransactionRepository transactionRepository;
 
+    @Autowired
+    private UserService userService;
+
     public Bankroll getBankroll() {
-        List<Bankroll> list = bankrollRepository.findAll();
-        if (list.isEmpty()) {
-            Bankroll defaultBankroll = new Bankroll(null, BigDecimal.ZERO, LocalDate.now().withDayOfMonth(1));
+        User user = userService.getCurrentUser();
+        Optional<Bankroll> opt = bankrollRepository.findByUserId(user.getId());
+        if (opt.isEmpty()) {
+            Bankroll defaultBankroll = new Bankroll();
+            defaultBankroll.setInitialBalance(BigDecimal.ZERO);
+            defaultBankroll.setStartDate(LocalDate.now().withDayOfMonth(1));
+            defaultBankroll.setUser(user);
             return bankrollRepository.save(defaultBankroll);
         }
-        Bankroll b = list.get(0);
+        Bankroll b = opt.get();
         if (b.getStartDate() == null) {
             b.setStartDate(LocalDate.now().withDayOfMonth(1));
             b = bankrollRepository.save(b);
@@ -48,7 +58,7 @@ public class BankrollService {
     }
 
     public List<BankrollTransaction> getAllTransactions() {
-        return transactionRepository.findAllByOrderByDateDescIdDesc();
+        return transactionRepository.findAllByUserIdOrderByDateDescIdDesc(userService.getCurrentUser().getId());
     }
 
     public BankrollTransaction addTransaction(BankrollTransaction tx) {
@@ -61,6 +71,7 @@ public class BankrollService {
         if (tx.getType() == null || tx.getType().trim().isEmpty()) {
             tx.setType("DEPOSIT");
         }
+        tx.setUser(userService.getCurrentUser());
         return transactionRepository.save(tx);
     }
 

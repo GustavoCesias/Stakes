@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import com.stakes.api.models.User;
 
 @Service
 public class ChannelService {
@@ -27,11 +28,16 @@ public class ChannelService {
     @Autowired
     private TipRepository tipRepository;
 
+    @Autowired
+    private UserService userService;
+
     public List<Channel> getAllChannels() {
-        return channelRepository.findAll();
+        User user = userService.getCurrentUser();
+        return channelRepository.findByUserId(user.getId());
     }
 
     public Channel createChannel(Channel channel) {
+        channel.setUser(userService.getCurrentUser());
         return channelRepository.save(channel);
     }
 
@@ -41,7 +47,9 @@ public class ChannelService {
 
     public ChannelSubgroup createSubgroup(Long channelId, ChannelSubgroup subgroup) {
         Channel channel = channelRepository.findById(channelId).orElseThrow();
+        // optionally verify channel belongs to user
         subgroup.setChannel(channel);
+        subgroup.setUser(userService.getCurrentUser());
         return channelSubgroupRepository.save(subgroup);
     }
 

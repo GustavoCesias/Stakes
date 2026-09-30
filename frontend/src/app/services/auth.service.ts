@@ -43,6 +43,10 @@ export class AuthService {
       );
   }
 
+  register(username: string, password: string, name: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/auth/register`, { username, password, name });
+  }
+
   logout() {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
@@ -60,7 +64,12 @@ export class AuthService {
 
   getUserName(): string {
     const user = this.currentUserSubject.value;
-    return user?.name || user?.username || 'Gustavo';
+    return user?.name || user?.username || 'Usuario';
+  }
+
+  isAdmin(): boolean {
+    const user = this.currentUserSubject.value;
+    return user?.role === 'ROLE_ADMIN';
   }
 
   exportBackup(): Observable<Blob> {

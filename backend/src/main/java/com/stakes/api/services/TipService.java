@@ -21,12 +21,16 @@ public class TipService {
     @Autowired
     private TicketService ticketService;
 
+    @Autowired
+    private UserService userService;
+
     public List<Tip> getAllTips() {
-        return tipRepository.findAllByOrderByDateDescIdDesc();
+        return tipRepository.findAllByUserIdOrderByDateDescIdDesc(userService.getCurrentUser().getId());
     }
 
     @Transactional
     public Tip createTip(Tip tip) {
+        tip.setUser(userService.getCurrentUser());
         Tip saved = tipRepository.save(tip);
         if (saved.getResult() != null) {
             ticketService.syncTipResultAndRecalculateAffectedTickets(saved);
@@ -36,6 +40,8 @@ public class TipService {
 
     @Transactional
     public List<Tip> createTips(List<Tip> tips) {
+        com.stakes.api.models.User user = userService.getCurrentUser();
+        tips.forEach(t -> t.setUser(user));
         List<Tip> saved = tipRepository.saveAll(tips);
         for (Tip t : saved) {
             if (t.getResult() != null) {

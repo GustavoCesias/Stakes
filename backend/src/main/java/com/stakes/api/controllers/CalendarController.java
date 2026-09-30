@@ -9,6 +9,7 @@ import com.stakes.api.repositories.SportEventRepository;
 import com.stakes.api.repositories.TipRepository;
 import com.stakes.api.repositories.LeagueRepository;
 import com.stakes.api.repositories.SportRepository;
+import com.stakes.api.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
@@ -38,17 +39,22 @@ public class CalendarController {
     @Autowired
     private SportRepository sportRepository;
 
+    @Autowired
+    private UserService userService;
+
     @GetMapping("/events")
     public List<CalendarEventDto> getEvents(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
             @RequestParam(required = false) Long leagueId) {
         
+        Long userId = userService.getCurrentUser().getId();
+        
         List<SportEvent> sportEvents;
         if (leagueId != null) {
-            sportEvents = sportEventRepository.findByLeagueIdAndEventDateBetweenOrderByEventDateAsc(leagueId, start, end);
+            sportEvents = sportEventRepository.findByUserIdAndLeagueIdAndEventDateBetweenOrderByEventDateAsc(userId, leagueId, start, end);
         } else {
-            sportEvents = sportEventRepository.findByEventDateBetweenOrderByEventDateAsc(start, end);
+            sportEvents = sportEventRepository.findByUserIdAndEventDateBetweenOrderByEventDateAsc(userId, start, end);
         }
 
         List<CalendarEventDto> dtos = new ArrayList<>();
@@ -88,7 +94,7 @@ public class CalendarController {
         // Add events from Tips
         LocalDate startDate = start.toLocalDate();
         LocalDate endDate = end.toLocalDate();
-        List<Tip> tips = tipRepository.findByDateBetween(startDate, endDate);
+        List<Tip> tips = tipRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
         
         for (Tip tip : tips) {
             if (tip.getEvent() == null || tip.getEvent().trim().isEmpty()) continue;
@@ -174,7 +180,8 @@ public class CalendarController {
             @RequestParam String homeTeam,
             @RequestParam String awayTeam) {
         
-        List<Tip> allTipsOnDate = tipRepository.findByDateBetween(date, date);
+        Long userId = userService.getCurrentUser().getId();
+        List<Tip> allTipsOnDate = tipRepository.findByUserIdAndDateBetween(userId, date, date);
         List<Tip> matchingTips = new ArrayList<>();
         
         String queryEventName = homeTeam.trim() + (awayTeam.trim().isEmpty() ? "" : " vs " + awayTeam.trim());
@@ -199,6 +206,7 @@ public class CalendarController {
 
     @PostMapping("/events")
     public SportEvent createEvent(@RequestBody SportEvent event) {
+        event.setUser(userService.getCurrentUser());
         if (event.getLeague() != null) {
             String leagueName = event.getLeague().getName();
             League league = leagueRepository.findByName(leagueName).orElseGet(() -> {

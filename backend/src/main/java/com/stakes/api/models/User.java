@@ -31,4 +31,7 @@ public class User {
 
     @Column
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column
+    private boolean approved = false;
 }

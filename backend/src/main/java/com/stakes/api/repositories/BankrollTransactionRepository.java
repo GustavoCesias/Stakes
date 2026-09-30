@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface BankrollTransactionRepository extends JpaRepository<BankrollTransaction, Long> {
     List<BankrollTransaction> findAllByOrderByDateDescIdDesc();
+    List<BankrollTransaction> findAllByUserIdOrderByDateDescIdDesc(Long userId);
 }

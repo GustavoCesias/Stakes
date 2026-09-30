@@ -42,6 +42,13 @@ public class AuthController {
         private String role;
     }
 
+    @Data
+    public static class RegisterRequest {
+        private String username;
+        private String password;
+        private String name;
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         if (request.getUsername() == null || request.getPassword() == null) {
@@ -59,6 +66,12 @@ public class AuthController {
         }
 
         User user = userOpt.get();
+
+        if (!user.isApproved()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Tu cuenta está pendiente de aprobación por un administrador."));
+        }
+
         String token = tokenProvider.generateToken(user.getUsername());
 
         LoginResponse response = new LoginResponse();
@@ -68,6 +81,29 @@ public class AuthController {
         response.setRole(user.getRole());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        if (request.getUsername() == null || request.getPassword() == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Usuario y contraseña requeridos"));
+        }
+
+        String username = request.getUsername().trim().toLowerCase();
+        if (userRepository.existsByUsername(username)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "El nombre de usuario ya está en uso"));
+        }
+
+        User newUser = new User();
+        newUser.setUsername(username);
+        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        newUser.setName(request.getName());
+        newUser.setRole("ROLE_USER");
+        newUser.setApproved(false); // Requiere aprobación
+
+        userRepository.save(newUser);
+
+        return ResponseEntity.ok(Map.of("message", "Cuenta creada exitosamente. Espera la aprobación de un administrador."));
     }
 
     @GetMapping("/me")

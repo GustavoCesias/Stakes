@@ -21,6 +21,9 @@ import java.util.Optional;
 public class TicketService {
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private com.stakes.api.repositories.TicketRepository ticketRepository;
 
     @Autowired
@@ -37,7 +40,8 @@ public class TicketService {
 
     @Transactional
     public List<Ticket> getAllTickets() {
-        List<Ticket> tickets = ticketRepository.findAllByOrderByDateDescIdDesc();
+        Long userId = userService.getCurrentUser().getId();
+        List<Ticket> tickets = ticketRepository.findAllByUserIdOrderByDateDescIdDesc(userId);
         boolean changed = false;
 
         for (Ticket t : tickets) {
@@ -79,7 +83,7 @@ public class TicketService {
         }
 
         if (changed) {
-            return ticketRepository.findAllByOrderByDateDescIdDesc();
+            return ticketRepository.findAllByUserIdOrderByDateDescIdDesc(userId);
         }
         return tickets;
     }
@@ -95,6 +99,7 @@ public class TicketService {
             managedSubgroup = channelSubgroupRepository.findById(ticket.getSubgroup().getId()).orElse(null);
         }
         ticket.setSubgroup(managedSubgroup);
+        ticket.setUser(userService.getCurrentUser());
 
         if (ticket.getId() != null) {
             Optional<Ticket> existingOpt = ticketRepository.findById(ticket.getId());
