@@ -51,7 +51,8 @@ export class AuthService {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
     this.currentUserSubject.next(null);
-    this.router.navigate(['/login']);
+    // Force a full page reload to clear all Angular singleton caches (e.g. channel.service caching)
+    window.location.href = '/login';
   }
 
   getToken(): string | null {
