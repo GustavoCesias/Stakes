@@ -109,22 +109,32 @@
           </datalist>
         </div>
 
-        <!-- Deporte y Liga -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Deporte (Opcional)</label>
-          <input type="text" [(ngModel)]="editingTip.sport" (change)="onSportChange()" name="sport" placeholder="Ej. Fútbol" list="sportOptionsModal"
-            class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
-          <datalist id="sportOptionsModal">
-            <option *ngFor="let s of sports" [value]="s.name"></option>
-          </datalist>
-        </div>
-        <div class="md:col-span-2">
-          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Liga / Competición (Opcional)</label>
-          <input type="text" [(ngModel)]="editingTip.league" name="league" placeholder="Ej. La Liga" list="leagueOptionsModal"
-            class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
-          <datalist id="leagueOptionsModal">
-            <option *ngFor="let l of filteredLeagues" [value]="l.name"></option>
-          </datalist>
+        <!-- Deporte, País, Liga -->
+        <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Deporte (Opcional)</label>
+            <input type="text" [(ngModel)]="editingTip.sport" (change)="onFilterChange()" name="sport" placeholder="Ej. Fútbol" list="sportOptionsModal"
+              class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+            <datalist id="sportOptionsModal">
+              <option *ngFor="let s of sports" [value]="s.name"></option>
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">País/Federación</label>
+            <input type="text" [(ngModel)]="tipCountry" (change)="onFilterChange()" name="tipCountry" placeholder="Opcional..." list="countryOptionsModal"
+              class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+            <datalist id="countryOptionsModal">
+              <option *ngFor="let c of uniqueCountries" [value]="c"></option>
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Liga / Competición</label>
+            <input type="text" [(ngModel)]="editingTip.league" name="league" placeholder="Ej. La Liga" list="leagueOptionsModal"
+              class="w-full bg-[#121822] border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl text-white px-4 py-2.5 text-sm outline-none transition-all">
+            <datalist id="leagueOptionsModal">
+              <option *ngFor="let l of filteredLeagues" [value]="l.name"></option>
+            </datalist>
+          </div>
         </div>
 
         @if (!editingBetBuilderTips && !isNewBetBuilder) {

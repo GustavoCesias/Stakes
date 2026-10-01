@@ -39,6 +39,9 @@ export class TipFormModalComponent implements OnInit {
   calendarEvents: SportEvent[] = [];
   filteredLeagues: League[] = [];
 
+  uniqueCountries: string[] = [];
+  tipCountry: string = '';
+
   ngOnInit() {
     this.loadConfigData();
     this.loadChannels();
@@ -73,6 +76,8 @@ export class TipFormModalComponent implements OnInit {
     this.configService.getLeagues().subscribe(leagues => {
       this.leagues = leagues;
       this.filteredLeagues = [...this.leagues];
+      const countries = leagues.map(l => l.country).filter(c => !!c) as string[];
+      this.uniqueCountries = [...new Set(countries)].sort();
     });
     this.configService.getMarkets().subscribe(markets => this.markets = markets);
   }
@@ -110,20 +115,32 @@ export class TipFormModalComponent implements OnInit {
     if (ev) {
       if (ev.league?.sport?.name) {
         this.editingTip.sport = ev.league.sport.name;
-        this.onSportChange();
+      }
+      if (ev.league?.country) {
+        this.tipCountry = ev.league.country;
       }
       if (ev.league?.name) {
         this.editingTip.league = ev.league.name;
       }
+      this.onFilterChange();
     }
   }
 
+  onFilterChange() {
+    this.filteredLeagues = this.leagues.filter(l => {
+      let match = true;
+      if (this.editingTip.sport) {
+        match = match && l.sport?.name.toLowerCase() === this.editingTip.sport.toLowerCase();
+      }
+      if (this.tipCountry) {
+        match = match && (l.country || '').toLowerCase() === this.tipCountry.toLowerCase();
+      }
+      return match;
+    });
+  }
+
   onSportChange() {
-    if (!this.editingTip.sport) {
-      this.filteredLeagues = [...this.leagues];
-    } else {
-      this.filteredLeagues = this.leagues.filter(l => l.sport?.name.toLowerCase() === this.editingTip.sport?.toLowerCase());
-    }
+    this.onFilterChange();
   }
 
   getMarketOptions(marketName: string | undefined): string[] {
