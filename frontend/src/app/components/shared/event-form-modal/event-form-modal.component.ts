@@ -27,27 +27,36 @@ export class EventFormModalComponent implements OnInit {
   };
 
   sportName: string = '';
+  countryName: string = '';
   leagueName: string = '';
 
   sports: Sport[] = [];
   leagues: League[] = [];
   filteredLeagues: League[] = [];
+  uniqueCountries: string[] = [];
 
   ngOnInit() {
     this.configService.getSports().subscribe(data => this.sports = data);
     this.configService.getLeagues().subscribe(data => {
       this.leagues = data;
       this.filteredLeagues = data;
+      // Extract unique countries
+      const countries = data.map(l => l.country).filter(c => !!c) as string[];
+      this.uniqueCountries = [...new Set(countries)].sort();
     });
   }
 
-  onSportChange() {
-    if (this.sportName) {
-      const sportLower = this.sportName.toLowerCase();
-      this.filteredLeagues = this.leagues.filter(l => l.sport?.name?.toLowerCase() === sportLower);
-    } else {
-      this.filteredLeagues = this.leagues;
-    }
+  onFilterChange() {
+    this.filteredLeagues = this.leagues.filter(l => {
+      let match = true;
+      if (this.sportName) {
+        match = match && l.sport?.name?.toLowerCase() === this.sportName.toLowerCase();
+      }
+      if (this.countryName) {
+        match = match && (l.country || '').toLowerCase() === this.countryName.toLowerCase();
+      }
+      return match;
+    });
   }
 
   saveEvent() {
@@ -59,8 +68,14 @@ export class EventFormModalComponent implements OnInit {
     if (!league) {
       league = { 
         name: this.leagueName.trim(),
+        country: this.countryName ? this.countryName.trim() : null,
         sport: { name: this.sportName.trim() } as Sport
       } as League;
+    } else {
+      // If the user selected an existing league but the country was updated or provided
+      if (this.countryName && (!league.country || league.country.toLowerCase() !== this.countryName.toLowerCase())) {
+        league.country = this.countryName.trim();
+      }
     }
 
     const payload = { ...this.newEvent, league };

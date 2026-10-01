@@ -212,6 +212,7 @@ public class CalendarController {
             League league = leagueRepository.findByName(leagueName).orElseGet(() -> {
                 League newLeague = new League();
                 newLeague.setName(leagueName);
+                newLeague.setCountry(event.getLeague().getCountry());
                 if (event.getLeague().getSport() != null) {
                     String sportName = event.getLeague().getSport().getName();
                     Sport sport = sportRepository.findByName(sportName).orElseGet(() -> {
@@ -223,6 +224,12 @@ public class CalendarController {
                 }
                 return leagueRepository.save(newLeague);
             });
+            // Update country if provided and different
+            if (event.getLeague().getCountry() != null && 
+                !event.getLeague().getCountry().equals(league.getCountry())) {
+                league.setCountry(event.getLeague().getCountry());
+                leagueRepository.save(league);
+            }
             event.setLeague(league);
         }
         return sportEventRepository.save(event);
