@@ -207,7 +207,7 @@ export class CalendarComponent implements OnInit {
     
     // Add real database calendar events first
     this.calendarEvents.forEach(evt => {
-       const key = `${evt.eventDate.substring(0,10)}_${evt.homeTeam} vs ${evt.awayTeam}`;
+       const key = `${evt.eventDate.substring(0,10)}_${evt.homeTeam} vs ${evt.awayTeam}`.toLowerCase();
        if (!eventMap.has(key)) {
          eventMap.set(key, {
            eventStr: `${evt.homeTeam} vs ${evt.awayTeam}`,
@@ -223,7 +223,7 @@ export class CalendarComponent implements OnInit {
     });
 
     allSelections.forEach(sel => {
-       const key = `${sel.dateStr}_${sel.eventStr}`;
+       const key = `${sel.dateStr}_${sel.eventStr}`.toLowerCase();
        if (!eventMap.has(key)) {
          eventMap.set(key, {
            eventStr: sel.eventStr,
@@ -490,10 +490,37 @@ export class CalendarComponent implements OnInit {
   
   formatEventStr(raw: string): string {
     let clean = raw.replace(/\s*\(bb\d*\)\s*/gi, '').trim();
-    if (clean.length > 25) {
-      return clean.substring(0, 25) + '...';
+    
+    let homeTeam = '';
+    let awayTeam = '';
+    let teams = clean.split(/\s+vs\s+/i);
+    
+    if (teams.length >= 2) {
+      homeTeam = teams[0].trim();
+      awayTeam = teams[1].trim();
+    } else {
+      teams = clean.split(/\s*-\s*/);
+      if (teams.length >= 2) {
+        homeTeam = teams[0].trim();
+        let away = teams[1].trim();
+        if (away.toUpperCase().endsWith(" VS")) away = away.substring(0, away.length - 3).trim();
+        else if (away.toUpperCase().endsWith("VS")) away = away.substring(0, away.length - 2).trim();
+        awayTeam = away;
+      } else {
+        homeTeam = clean;
+      }
     }
-    return clean;
+    
+    let eventStr = clean;
+    if (homeTeam && awayTeam) {
+       eventStr = `${homeTeam} vs ${awayTeam}`;
+    } else if (homeTeam) {
+       eventStr = homeTeam;
+       if (eventStr.toUpperCase().endsWith(" VS")) eventStr = eventStr.substring(0, eventStr.length - 3).trim();
+       else if (eventStr.toUpperCase().endsWith("VS")) eventStr = eventStr.substring(0, eventStr.length - 2).trim();
+    }
+    
+    return eventStr;
   }
   
   getDotColor(result: string): string {
