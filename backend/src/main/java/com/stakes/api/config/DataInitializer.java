@@ -56,5 +56,25 @@ public class DataInitializer implements CommandLineRunner {
         jdbcTemplate.update("UPDATE bankroll SET user_id = ? WHERE id = (SELECT MAX(id) FROM bankroll WHERE user_id IS NULL)", adminId);
         jdbcTemplate.update("DELETE FROM bankroll WHERE user_id IS NULL");
         jdbcTemplate.update("UPDATE sport_events SET user_id = ? WHERE user_id IS NULL", adminId);
+        
+        // Intentar eliminar constraint unique residual en channels (solo funciona en PostgreSQL)
+        try {
+            String dropConstraintSql = "DO $$ " +
+                "DECLARE constraint_name text; " +
+                "BEGIN " +
+                "  SELECT conname INTO constraint_name " +
+                "  FROM pg_constraint " +
+                "  WHERE conrelid = 'channels'::regclass " +
+                "  AND contype = 'u' " +
+                "  AND conkey @> (SELECT array_agg(attnum) FROM pg_attribute WHERE attrelid = 'channels'::regclass AND attname = 'name'); " +
+                "  IF constraint_name IS NOT NULL THEN " +
+                "    EXECUTE 'ALTER TABLE channels DROP CONSTRAINT ' || constraint_name; " +
+                "  END IF; " +
+                "END $$;";
+            jdbcTemplate.execute(dropConstraintSql);
+            System.out.println("Unique constraint in channels dropped successfully (if existed).");
+        } catch (Exception e) {
+            System.out.println("Skipping PostgreSQL specific constraint drop (probably running in MySQL).");
+        }
     }
 }

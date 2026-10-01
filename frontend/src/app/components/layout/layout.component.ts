@@ -128,7 +128,7 @@ export class LayoutComponent implements OnInit {
         this.channels.push(saved);
         this.closeNewChannelModal();
       },
-      error: (err) => console.error('Error creando canal', err)
+      error: (err) => alert('Error creando canal: ' + (err.error?.message || err.message))
     });
   }
 
