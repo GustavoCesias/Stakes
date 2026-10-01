@@ -49,11 +49,11 @@ export class EventFormModalComponent implements OnInit {
   onFilterChange() {
     this.filteredLeagues = this.leagues.filter(l => {
       let match = true;
-      if (this.sportName) {
-        match = match && l.sport?.name?.toLowerCase() === this.sportName.toLowerCase();
+      if (this.sportName?.trim()) {
+        match = match && l.sport?.name?.toLowerCase() === this.sportName.trim().toLowerCase();
       }
-      if (this.countryName) {
-        match = match && (l.country || '').toLowerCase() === this.countryName.toLowerCase();
+      if (this.countryName?.trim()) {
+        match = match && (l.country || '').toLowerCase() === this.countryName.trim().toLowerCase();
       }
       return match;
     });

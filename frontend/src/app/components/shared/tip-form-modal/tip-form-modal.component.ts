@@ -129,11 +129,11 @@ export class TipFormModalComponent implements OnInit {
   onFilterChange() {
     this.filteredLeagues = this.leagues.filter(l => {
       let match = true;
-      if (this.editingTip.sport) {
-        match = match && l.sport?.name.toLowerCase() === this.editingTip.sport.toLowerCase();
+      if (this.editingTip.sport?.trim()) {
+        match = match && l.sport?.name.toLowerCase() === this.editingTip.sport.trim().toLowerCase();
       }
-      if (this.tipCountry) {
-        match = match && (l.country || '').toLowerCase() === this.tipCountry.toLowerCase();
+      if (this.tipCountry?.trim()) {
+        match = match && (l.country || '').toLowerCase() === this.tipCountry.trim().toLowerCase();
       }
       return match;
     });

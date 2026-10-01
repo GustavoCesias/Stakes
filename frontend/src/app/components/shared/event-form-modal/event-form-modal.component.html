@@ -16,14 +16,14 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Deporte</label>
-            <input list="sportsList" [(ngModel)]="sportName" (change)="onFilterChange()" name="sportName" placeholder="Selecciona..." class="block w-full bg-slate-800 border border-white/10 focus:border-emerald-500 rounded-lg text-white px-3 py-2 text-sm outline-none transition-all">
+            <input list="sportsList" [(ngModel)]="sportName" (ngModelChange)="onFilterChange()" name="sportName" placeholder="Selecciona..." class="block w-full bg-slate-800 border border-white/10 focus:border-emerald-500 rounded-lg text-white px-3 py-2 text-sm outline-none transition-all">
             <datalist id="sportsList">
               <option *ngFor="let s of sports" [value]="s.name"></option>
             </datalist>
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">País/Federación</label>
-            <input list="countriesList" [(ngModel)]="countryName" (change)="onFilterChange()" name="countryName" placeholder="Opcional..." class="block w-full bg-slate-800 border border-white/10 focus:border-emerald-500 rounded-lg text-white px-3 py-2 text-sm outline-none transition-all">
+            <input list="countriesList" [(ngModel)]="countryName" (ngModelChange)="onFilterChange()" name="countryName" placeholder="Opcional..." class="block w-full bg-slate-800 border border-white/10 focus:border-emerald-500 rounded-lg text-white px-3 py-2 text-sm outline-none transition-all">
             <!-- Solo para autocompletar países únicos de la liga -->
             <datalist id="countriesList">
               <option *ngFor="let c of uniqueCountries" [value]="c"></option>
