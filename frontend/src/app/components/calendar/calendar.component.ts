@@ -167,7 +167,7 @@ export class CalendarComponent implements OnInit {
       if (!tDate) return false;
       const d = new Date(tDate + 'T12:00:00');
       const inMonth = d.getFullYear() === year && d.getMonth() === month;
-      if (inMonth && (t.result === 'GANADA' || t.result === 'PERDIDA')) {
+      if (inMonth && t.result !== 'PENDIENTE') {
          monthProfit += (t.profit || 0);
       }
       return inMonth;
@@ -175,8 +175,8 @@ export class CalendarComponent implements OnInit {
     
     this.summary = {
       total: this.monthTickets.length,
-      won: this.monthTickets.filter(t => t.result === 'GANADA').length,
-      lost: this.monthTickets.filter(t => t.result === 'PERDIDA').length,
+      won: this.monthTickets.filter(t => t.result === 'GANADA' || (t.result === 'CASHOUT' && Number(t.profit) > 0)).length,
+      lost: this.monthTickets.filter(t => t.result === 'PERDIDA' || (t.result === 'CASHOUT' && Number(t.profit) <= 0)).length,
       pending: this.monthTickets.filter(t => t.result === 'PENDIENTE').length,
       totalProfit: monthProfit
     };
@@ -391,7 +391,7 @@ export class CalendarComponent implements OnInit {
       // We only calculate profit if the ticket was PLACED on this day to avoid double counting profit across days
       const placedTickets = dayTickets.filter(t => this.normalizeDate(t.date) === dStr);
       placedTickets.forEach(t => {
-         if (t.result === 'GANADA' || t.result === 'PERDIDA') {
+         if (t.result !== 'PENDIENTE') {
            dayProfit += (t.profit || 0);
            hasResolved = true;
          }
@@ -527,6 +527,7 @@ export class CalendarComponent implements OnInit {
     switch (result.toUpperCase()) {
       case 'GANADA': return 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]';
       case 'PERDIDA': return 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]';
+      case 'CASHOUT': return 'bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)]';
       case 'NULA': return 'bg-gray-500';
       default: return 'bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]';
     }
@@ -536,6 +537,7 @@ export class CalendarComponent implements OnInit {
     switch (result.toUpperCase()) {
       case 'GANADA': return 'text-emerald-400';
       case 'PERDIDA': return 'text-red-400';
+      case 'CASHOUT': return 'text-yellow-400';
       case 'NULA': return 'text-gray-400';
       default: return 'text-blue-400';
     }
@@ -545,6 +547,7 @@ export class CalendarComponent implements OnInit {
     switch (result.toUpperCase()) {
       case 'GANADA': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'PERDIDA': return 'bg-red-500/10 text-red-400 border-red-500/20';
+      case 'CASHOUT': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
       case 'NULA': return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
       default: return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
     }
@@ -554,6 +557,7 @@ export class CalendarComponent implements OnInit {
     switch (result.toUpperCase()) {
       case 'GANADA': return 'Ganada';
       case 'PERDIDA': return 'Perdida';
+      case 'CASHOUT': return 'Cashout';
       case 'NULA': return 'Nula';
       default: return 'Pendiente';
     }
